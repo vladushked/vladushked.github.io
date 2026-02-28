@@ -1,19 +1,25 @@
 import { Outlet, useLocation, Link } from "react-router";
-import { User, FileText, FolderOpen, BookOpen, Sun, Moon } from "lucide-react";
+import { User, FileText, FolderOpen, BookOpen } from "lucide-react";
 import { useEffect } from "react";
-import { useTheme } from "./ThemeProvider";
+import { navigationPages } from "../content/markdownPages";
+import type { MarkdownPageRoute } from "../content/markdownPages";
 
-const navItems = [
-  { path: "/", label: "ABOUT ME", icon: User },
-  { path: "/resume", label: "RESUME", icon: FileText },
-  { path: "/projects", label: "PROJECTS", icon: FolderOpen },
-  { path: "/posts", label: "POSTS", icon: BookOpen },
-];
+const navIcons: Record<MarkdownPageRoute, typeof User> = {
+  "/": User,
+  "/resume": FileText,
+  "/projects": FolderOpen,
+  "/posts": BookOpen,
+};
+
+const navItems = navigationPages.map((page) => ({
+  path: page.meta.route,
+  label: page.meta.navLabel,
+  icon: navIcons[page.meta.route],
+}));
 
 export function Layout() {
   const location = useLocation();
-  const { theme, toggleTheme } = useTheme();
-  
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
@@ -39,31 +45,14 @@ export function Layout() {
                 }`}
               >
                 <Icon size={18} strokeWidth={1.5} />
-                <span className="text-sm mono tracking-wide">{item.label}</span>
+                <span className="type-menu-label">{item.label}</span>
               </Link>
             );
           })}
         </nav>
-        
-        <div className="space-y-4">
-          <button
-            onClick={toggleTheme}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-[var(--color-border)] hover:border-[var(--color-text)] transition-all"
-            aria-label="Toggle theme"
-          >
-            {theme === 'light' ? (
-              <Moon size={18} strokeWidth={1.5} />
-            ) : (
-              <Sun size={18} strokeWidth={1.5} />
-            )}
-            <span className="text-sm mono tracking-wide">
-              {theme === 'light' ? 'DARK' : 'LIGHT'}
-            </span>
-          </button>
-          
-          <div className="text-xs mono text-[var(--color-secondary)] tracking-wide">
-            © 2026
-          </div>
+
+        <div className="type-caption">
+          © 2026
         </div>
       </aside>
 
@@ -83,32 +72,19 @@ export function Layout() {
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 px-2 py-2 transition-colors ${
-                isActive ? "text-[var(--color-mint)]" : "text-[var(--color-secondary)]"
+              className={`mobile-nav-item flex flex-col items-center justify-center gap-1 rounded-sm border px-2 py-2 transition-colors ${
+                isActive
+                  ? "bg-[var(--color-mint)] border-[var(--color-mint)] text-[var(--color-text)]"
+                  : "border-[var(--color-border)] text-[var(--color-secondary)]"
               }`}
             >
               <Icon size={20} strokeWidth={1.5} />
-              <span className="text-[9px] mono tracking-wider leading-tight text-center">
+              <span className="type-menu-label text-center">
                 {item.label}
               </span>
             </Link>
           );
         })}
-        
-        <button
-          onClick={toggleTheme}
-          className="flex flex-col items-center gap-1 px-2 py-2 text-[var(--color-secondary)] transition-colors"
-          aria-label="Toggle theme"
-        >
-          {theme === 'light' ? (
-            <Moon size={20} strokeWidth={1.5} />
-          ) : (
-            <Sun size={20} strokeWidth={1.5} />
-          )}
-          <span className="text-[9px] mono tracking-wider">
-            {theme === 'light' ? 'DARK' : 'LIGHT'}
-          </span>
-        </button>
       </nav>
     </div>
   );

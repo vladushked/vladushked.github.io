@@ -1,10 +1,35 @@
 
   <!DOCTYPE html>
-  <html lang="en">
+  <html lang="ru">
     <head>
       <meta charset="UTF-8" />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <title>vladislavplotnikov.ru</title>
+      <meta
+        name="description"
+        content="Владислав Плотников — Tech lead / Senior Python Developer в робототехнике, архитектура ПО, computer vision, backend и подводные робототехнические системы."
+      />
+      <script>
+        (function () {
+          var prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+          document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+        })();
+      </script>
+      <script>
+        (function () {
+          var search = window.location.search;
+          if (!search.startsWith("?p=")) {
+            return;
+          }
+
+          var queryParts = search.slice(1).split("&q=");
+          var path = decodeURIComponent(queryParts[0].slice(2));
+          var query = queryParts[1] ? "?" + queryParts[1].replace(/~and~/g, "&") : "";
+          var hash = window.location.hash || "";
+
+          window.history.replaceState(null, "", path + query + hash);
+        })();
+      </script>
+      <title>Владислав Плотников</title>
     </head>
 
     <body>
