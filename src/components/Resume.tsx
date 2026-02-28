@@ -20,22 +20,22 @@ export function Resume() {
               </div>
               <ul className="space-y-2 text-sm text-[var(--color-secondary)]">
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Разработка системы управления для промышленных манипуляторов на базе ROS2</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Интеграция компьютерного зрения для распознавания объектов и планирования траекторий</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Настройка CI/CD pipeline для автоматического тестирования и развёртывания</span>
                 </li>
               </ul>
             </div>
 
             {/* Experience Item 2 */}
-            <div className="space-y-4 border-l-4 border-[var(--color-border)] pl-6 py-2">
+            <div className="space-y-4 border-l-4 border-[var(--color-mint)] pl-6 py-2">
               <div className="space-y-2">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                   <h3 className="text-xl mono">Mentor / Software Engineer</h3>
@@ -45,15 +45,15 @@ export function Resume() {
               </div>
               <ul className="space-y-2 text-sm text-[var(--color-secondary)]">
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Менторство программистов команды, проведение code review и обучающих сессий</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Разработка ПО для автономного подводного аппарата (навигация, компьютерное зрение)</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Участие в международных соревнованиях по подводной робототехнике</span>
                 </li>
               </ul>
@@ -70,15 +70,15 @@ export function Resume() {
               </div>
               <ul className="space-y-2 text-sm text-[var(--color-secondary)]">
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Разработка встроенного ПО для микроконтроллеров (C/C++)</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Создание драйверов для сенсоров и исполнительных механизмов</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="text-[var(--color-mint)] shrink-0">•</span>
+                  <span className="text-[var(--color-secondary)] shrink-0">•</span>
                   <span>Отладка и тестирование систем реального времени</span>
                 </li>
               </ul>

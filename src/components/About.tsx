@@ -8,7 +8,7 @@ export function About() {
         <div className="space-y-6">
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-light tracking-tight">
-              Иван Петров
+              Владислав Плотников
             </h1>
             <p className="text-xl md:text-2xl text-[var(--color-secondary)] font-light">
               Robotics Software Engineer
