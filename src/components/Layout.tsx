@@ -40,7 +40,7 @@ export function Layout() {
                 to={item.path}
                 className={`flex items-center gap-3 px-4 py-3 border transition-all ${
                   isActive
-                    ? "bg-[var(--color-mint)] border-[var(--color-mint)] text-[var(--color-text)]"
+                    ? "bg-[var(--color-mint)] border-[var(--color-mint)] nav-item-active"
                     : "border-[var(--color-border)] hover:border-[var(--color-text)]"
                 }`}
               >
@@ -74,7 +74,7 @@ export function Layout() {
               to={item.path}
               className={`mobile-nav-item flex flex-col items-center justify-center gap-1 rounded-sm border px-2 py-2 transition-colors ${
                 isActive
-                  ? "bg-[var(--color-mint)] border-[var(--color-mint)] text-[var(--color-text)]"
+                  ? "bg-[var(--color-mint)] border-[var(--color-mint)] nav-item-active"
                   : "border-[var(--color-border)] text-[var(--color-secondary)]"
               }`}
             >

@@ -1,8 +1,60 @@
 import { Fragment } from "react";
 import type { ReactNode } from "react";
+import { Mail, Phone, Send } from "lucide-react";
 import type { MarkdownPageDefinition } from "../content/markdownPages";
 
+type HeroContactType = "phone" | "email" | "telegram";
+type CardKind = "experience" | "education";
+type CardFill = "none" | "gray" | "accent";
+type CardStroke = "none" | "gray" | "accent";
+type CardHeadingVariant = "page" | "card";
+type SkillGroupVariant = "solid" | "outline";
+
+type HeroContact = {
+  type: HeroContactType;
+  label: string;
+  href: string;
+};
+
+type CardSubtitleLine = {
+  text: string;
+  period: string;
+};
+
+type CardPresentation = {
+  fill: CardFill;
+  stroke: CardStroke;
+  headingVariant: CardHeadingVariant;
+};
+
+type CardBodyContent = {
+  title?: string;
+  subtitle?: string;
+  period?: string;
+  meta?: string;
+  summary?: string;
+  subtitleLines: CardSubtitleLine[];
+  bullets: string[];
+};
+
+type HeroBlock = CardPresentation &
+  Omit<CardBodyContent, "bullets"> & {
+    name: string;
+    contacts: HeroContact[];
+  };
+
+type CardBlock = CardPresentation & CardBodyContent & { kind: CardKind };
+
+type SkillGroupBlock = {
+  title: string;
+  variant: SkillGroupVariant;
+  skills: string[];
+};
+
 type MarkdownBlock =
+  | { type: "hero"; data: HeroBlock }
+  | { type: "card"; data: CardBlock }
+  | { type: "skill-group"; data: SkillGroupBlock }
   | { type: "heading"; level: 2 | 3; text: string }
   | { type: "paragraph"; text: string }
   | { type: "unordered-list"; items: string[] }
@@ -13,23 +65,49 @@ type MarkdownPageProps = {
   page: MarkdownPageDefinition;
 };
 
+type BaseCardProps = {
+  fill: CardFill;
+  stroke: CardStroke;
+  headingVariant: CardHeadingVariant;
+  heading: ReactNode;
+  title?: string;
+  subtitle?: string;
+  period?: string;
+  meta?: string;
+  summary?: string;
+  subtitleLines: CardSubtitleLine[];
+  bullets: string[];
+  footer?: ReactNode;
+};
+
 const inlineTokenPattern = /(\[[^\]]+\]\([^)]+\)|\*\*.+?\*\*|`[^`]+`|\*[^*]+\*)/g;
 
 export function MarkdownPage({ page }: MarkdownPageProps) {
   const blocks = parseMarkdownBlocks(page.content);
+  const hasHeroBlock = blocks.some((block) => block.type === "hero");
+  const pageTitle = page.meta.title;
+  const showPageHeader = !hasHeroBlock && Boolean(pageTitle);
 
   return (
     <div className="min-h-screen px-6 py-12 md:px-12 md:py-20">
       <article className="mx-auto max-w-4xl">
-        <header className="space-y-4 border-b border-[var(--color-border)] pb-8">
-          {page.meta.eyebrow ? <p className="type-eyebrow">{page.meta.eyebrow}</p> : null}
-          <h1 className="type-page-title">{page.meta.title}</h1>
-          {page.meta.description ? (
-            <p className="type-body-lead ui-text-muted max-w-3xl">{page.meta.description}</p>
-          ) : null}
-        </header>
+        {showPageHeader ? (
+          <header className="space-y-4 border-b border-[var(--color-border)] pb-8">
+            {page.meta.eyebrow ? <p className="type-eyebrow">{page.meta.eyebrow}</p> : null}
+            <h1 className="type-page-title">{pageTitle}</h1>
+            {page.meta.description ? (
+              <p className="type-body-lead ui-text-muted max-w-3xl">{page.meta.description}</p>
+            ) : null}
+          </header>
+        ) : null}
 
-        <div className="markdown-content">
+        <div
+          className={
+            showPageHeader
+              ? "markdown-content markdown-content-with-header"
+              : "markdown-content markdown-content-no-header"
+          }
+        >
           {blocks.map((block, index) => renderBlock(block, index))}
         </div>
       </article>
@@ -42,12 +120,29 @@ function parseMarkdownBlocks(source: string) {
   const blocks: MarkdownBlock[] = [];
 
   let index = 0;
+  let heroCount = 0;
 
   while (index < lines.length) {
     const trimmedLine = lines[index].trim();
 
     if (!trimmedLine) {
       index += 1;
+      continue;
+    }
+
+    if (isDirectiveStart(trimmedLine)) {
+      const directive = parseDirectiveBlock(lines, index);
+
+      if (directive.block.type === "hero") {
+        heroCount += 1;
+
+        if (heroCount > 1) {
+          throw new Error('Markdown body may not contain more than one "::hero" block.');
+        }
+      }
+
+      blocks.push(directive.block);
+      index = directive.nextIndex;
       continue;
     }
 
@@ -107,6 +202,7 @@ function parseMarkdownBlocks(source: string) {
 
       if (
         !paragraphLine ||
+        isDirectiveStart(paragraphLine) ||
         /^#\s+/.test(paragraphLine) ||
         /^(#{2,3})\s+/.test(paragraphLine) ||
         /^[-*]\s+/.test(paragraphLine) ||
@@ -132,6 +228,18 @@ function parseMarkdownBlocks(source: string) {
 }
 
 function renderBlock(block: MarkdownBlock, index: number) {
+  if (block.type === "hero") {
+    return <HeroSection key={`block-${index}`} block={block.data} />;
+  }
+
+  if (block.type === "card") {
+    return <CardSection key={`block-${index}`} block={block.data} />;
+  }
+
+  if (block.type === "skill-group") {
+    return <SkillGroupSection key={`block-${index}`} block={block.data} />;
+  }
+
   if (block.type === "heading") {
     if (block.level === 2) {
       return (
@@ -186,6 +294,146 @@ function renderBlock(block: MarkdownBlock, index: number) {
     <blockquote key={`block-${index}`} className="markdown-quote">
       {renderInline(block.text, `quote-${index}`)}
     </blockquote>
+  );
+}
+
+function HeroSection({ block }: { block: HeroBlock }) {
+  const footer = block.contacts.length ? (
+    <ul className="card-contacts">
+      {block.contacts.map((contact, index) => {
+        const Icon = getContactIcon(contact.type);
+        const opensNewTab = /^https?:\/\//.test(contact.href);
+
+        return (
+          <li key={`${contact.type}-${index}`} className="card-contact-item">
+            <Icon size={16} strokeWidth={1.8} />
+            <a
+              href={contact.href}
+              target={opensNewTab ? "_blank" : undefined}
+              rel={opensNewTab ? "noopener noreferrer" : undefined}
+              className="card-contact-link"
+            >
+              {contact.label}
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  ) : null;
+
+  return (
+    <BaseCard
+      fill={block.fill}
+      stroke={block.stroke}
+      headingVariant={block.headingVariant}
+      heading={<h1 className="card-heading card-heading-page">{block.name}</h1>}
+      title={block.title}
+      subtitle={block.subtitle}
+      period={block.period}
+      meta={block.meta}
+      summary={block.summary}
+      subtitleLines={block.subtitleLines}
+      bullets={[]}
+      footer={footer}
+    />
+  );
+}
+
+function CardSection({ block }: { block: CardBlock }) {
+  return (
+    <BaseCard
+      fill={block.fill}
+      stroke={block.stroke}
+      headingVariant={block.headingVariant}
+      heading={<h3 className="card-heading card-heading-card">{block.title}</h3>}
+      subtitle={block.subtitle}
+      period={block.period}
+      meta={block.meta}
+      summary={block.summary}
+      subtitleLines={block.subtitleLines}
+      bullets={block.bullets}
+    />
+  );
+}
+
+function BaseCard({
+  fill,
+  stroke,
+  headingVariant,
+  heading,
+  title,
+  subtitle,
+  period,
+  meta,
+  summary,
+  subtitleLines,
+  bullets,
+  footer,
+}: BaseCardProps) {
+  return (
+    <section className={`card card-fill-${fill} card-stroke-${stroke} card-heading-${headingVariant}`}>
+      <div className="card-stack">
+        <div className="card-stack-tight">
+          {heading}
+
+          {title ? <p className="card-title">{renderInline(title, `${title}-title`)}</p> : null}
+
+          {subtitleLines.length ? (
+            <div className="card-subtitle-lines">
+              {subtitleLines.map((line, index) => (
+                <div key={`${line.text}-${index}`} className="card-subtitle-line">
+                  <span className="card-subtitle">{line.text}</span>
+                  <span className="card-period">{line.period}</span>
+                </div>
+              ))}
+            </div>
+          ) : subtitle || period ? (
+            <p className="card-subtitle-row">
+              {subtitle ? <span className="card-subtitle">{subtitle}</span> : null}
+              {subtitle && period ? <span className="card-separator">·</span> : null}
+              {period ? <span className="card-period">{period}</span> : null}
+            </p>
+          ) : null}
+
+          {meta ? <p className="card-meta">{renderInline(meta, `${meta}-meta`)}</p> : null}
+        </div>
+
+        {summary ? (
+          <p className="type-body card-summary">{renderInline(summary, `${summary}-summary`)}</p>
+        ) : null}
+
+        {bullets.length ? (
+          <ul className="markdown-list">
+            {bullets.map((item, itemIndex) => (
+              <li key={`${item}-item-${itemIndex}`} className="markdown-list-item">
+                <span className="accent-ink markdown-list-marker">•</span>
+                <span>{renderInline(item, `${item}-bullet-${itemIndex}`)}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {footer}
+      </div>
+    </section>
+  );
+}
+
+function SkillGroupSection({ block }: { block: SkillGroupBlock }) {
+  return (
+    <section className="skill-group">
+      <p className="type-eyebrow">{block.title}</p>
+      <div className="skill-chip-list">
+        {block.skills.map((skill, index) => (
+          <span
+            key={`${skill}-${index}`}
+            className={block.variant === "solid" ? "skill-chip skill-chip-solid" : "skill-chip skill-chip-outline"}
+          >
+            {skill}
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -273,7 +521,6 @@ function renderInlineToken(token: string, key: string) {
   return token;
 }
 
-// This parser supports a narrow markdown subset tuned for site content, not full CommonMark.
 function parseList(lines: string[], startIndex: number, type: "unordered" | "ordered") {
   const items: string[] = [];
   let index = startIndex;
@@ -309,6 +556,7 @@ function parseList(lines: string[], startIndex: number, type: "unordered" | "ord
 
       if (
         isHeading(trimmedLine) ||
+        isDirectiveStart(trimmedLine) ||
         /^#\s+/.test(trimmedLine) ||
         isBlockquote(trimmedLine) ||
         isListMarker(trimmedLine)
@@ -370,4 +618,505 @@ function isBlockquote(line: string) {
 
 function isListMarker(line: string) {
   return /^[-*]\s+/.test(line) || /^\d+\.\s+/.test(line);
+}
+
+function isDirectiveStart(line: string) {
+  return /^::(?:hero|card|skill-group)$/.test(line);
+}
+
+function parseDirectiveBlock(lines: string[], startIndex: number) {
+  const opener = lines[startIndex].trim();
+  const directiveName = opener.slice(2);
+  const bodyLines: string[] = [];
+  let index = startIndex + 1;
+
+  while (index < lines.length) {
+    const trimmedLine = lines[index].trim();
+
+    if (trimmedLine === "::") {
+      return {
+        block: buildDirectiveBlock(directiveName, bodyLines),
+        nextIndex: index + 1,
+      };
+    }
+
+    bodyLines.push(lines[index]);
+    index += 1;
+  }
+
+  throw new Error(`Markdown directive "${opener}" is not closed.`);
+}
+
+function buildDirectiveBlock(name: string, bodyLines: string[]): MarkdownBlock {
+  if (name === "hero") {
+    return { type: "hero", data: parseHeroDirective(bodyLines) };
+  }
+
+  if (name === "card") {
+    return { type: "card", data: parseCardDirective(bodyLines) };
+  }
+
+  if (name === "skill-group") {
+    return { type: "skill-group", data: parseSkillGroupDirective(bodyLines) };
+  }
+
+  throw new Error(`Unsupported markdown directive "::${name}".`);
+}
+
+function parseHeroDirective(lines: string[]): HeroBlock {
+  let name = "";
+  let title = "";
+  let subtitle = "";
+  let period = "";
+  let meta = "";
+  let summary = "";
+  let legacyRole = "";
+  let legacyExperienceLabel = "";
+  let legacyExperience = "";
+  let presentation = createDefaultPresentation("hero");
+  const contacts: HeroContact[] = [];
+  const subtitleLines: CardSubtitleLine[] = [];
+
+  for (const rawLine of lines) {
+    const trimmedLine = rawLine.trim();
+
+    if (!trimmedLine) {
+      continue;
+    }
+
+    const field = splitDirectiveField(trimmedLine, "hero");
+
+    if (field.key === "name") {
+      name = field.value;
+      continue;
+    }
+
+    if (field.key === "contact") {
+      contacts.push(parseHeroContact(field.value));
+      continue;
+    }
+
+    if (field.key === "role") {
+      legacyRole = field.value;
+      continue;
+    }
+
+    if (field.key === "experienceLabel") {
+      legacyExperienceLabel = field.value;
+      continue;
+    }
+
+    if (field.key === "experience") {
+      legacyExperience = field.value;
+      continue;
+    }
+
+    if (isCardPresentationField(field.key)) {
+      presentation = applyCardPresentationField(presentation, field, "hero");
+      continue;
+    }
+
+    if (field.key === "title") {
+      title = field.value;
+      continue;
+    }
+
+    if (field.key === "subtitle") {
+      subtitle = field.value;
+      continue;
+    }
+
+    if (field.key === "period") {
+      period = field.value;
+      continue;
+    }
+
+    if (field.key === "meta") {
+      meta = field.value;
+      continue;
+    }
+
+    if (field.key === "summary") {
+      summary = field.value;
+      continue;
+    }
+
+    if (field.key === "subtitleLine") {
+      subtitleLines.push(parseCardSubtitleLine(field.value, "hero", "subtitleLine"));
+      continue;
+    }
+
+    throw new Error(`Markdown "::hero" does not support field "${field.key}".`);
+  }
+
+  if (!name) {
+    throw new Error('Markdown "::hero" requires "name".');
+  }
+
+  if (!title && legacyRole) {
+    title = legacyRole;
+  }
+
+  if (!meta && legacyExperienceLabel && legacyExperience) {
+    meta = `${legacyExperienceLabel}: ${legacyExperience}`;
+  }
+
+  if ((!title || !meta) && (legacyRole || legacyExperienceLabel || legacyExperience)) {
+    if (!legacyRole || !legacyExperienceLabel || !legacyExperience) {
+      throw new Error(
+        'Markdown "::hero" legacy fields require "role", "experienceLabel", and "experience" together.',
+      );
+    }
+  }
+
+  return {
+    ...presentation,
+    name,
+    title: normalizeOptionalField(title),
+    subtitle: normalizeOptionalField(subtitle),
+    period: normalizeOptionalField(period),
+    meta: normalizeOptionalField(meta),
+    summary: normalizeOptionalField(summary),
+    subtitleLines,
+    contacts,
+  };
+}
+
+function parseCardDirective(lines: string[]): CardBlock {
+  let kind: CardKind | undefined;
+  let title = "";
+  let subtitle = "";
+  let period = "";
+  let meta = "";
+  let summary = "";
+  let legacyRole = "";
+  let presentation = createDefaultPresentation("card");
+  let hasExplicitFill = false;
+  let hasExplicitStroke = false;
+  const bullets: string[] = [];
+  const subtitleLines: CardSubtitleLine[] = [];
+
+  for (const rawLine of lines) {
+    const trimmedLine = rawLine.trim();
+
+    if (!trimmedLine) {
+      continue;
+    }
+
+    const field = splitDirectiveField(trimmedLine, "card");
+
+    if (field.key === "kind") {
+      if (!isCardKind(field.value)) {
+        throw new Error(`Markdown "::card" uses unsupported kind "${field.value}".`);
+      }
+
+      kind = field.value;
+      continue;
+    }
+
+    if (field.key === "variant") {
+      if (field.value !== "outline") {
+        throw new Error(`Markdown "::card" uses unsupported variant "${field.value}".`);
+      }
+
+      presentation = applyLegacyOutlineVariant(presentation, hasExplicitFill, hasExplicitStroke);
+      continue;
+    }
+
+    if (isCardPresentationField(field.key)) {
+      presentation = applyCardPresentationField(presentation, field, "card");
+
+      if (field.key === "fill") {
+        hasExplicitFill = true;
+      }
+
+      if (field.key === "stroke") {
+        hasExplicitStroke = true;
+      }
+
+      continue;
+    }
+
+    if (field.key === "title") {
+      title = field.value;
+      continue;
+    }
+
+    if (field.key === "subtitle") {
+      subtitle = field.value;
+      continue;
+    }
+
+    if (field.key === "role") {
+      legacyRole = field.value;
+      continue;
+    }
+
+    if (field.key === "period") {
+      period = field.value;
+      continue;
+    }
+
+    if (field.key === "meta") {
+      meta = field.value;
+      continue;
+    }
+
+    if (field.key === "summary") {
+      summary = field.value;
+      continue;
+    }
+
+    if (field.key === "bullet") {
+      bullets.push(field.value);
+      continue;
+    }
+
+    if (field.key === "subtitleLine") {
+      subtitleLines.push(parseCardSubtitleLine(field.value, "card", "subtitleLine"));
+      continue;
+    }
+
+    if (field.key === "roleLine") {
+      subtitleLines.push(parseCardSubtitleLine(field.value, "card", "roleLine"));
+      continue;
+    }
+
+    throw new Error(`Markdown "::card" does not support field "${field.key}".`);
+  }
+
+  if (!kind || !title) {
+    throw new Error('Markdown "::card" requires "kind" and "title".');
+  }
+
+  if (!subtitle && legacyRole) {
+    subtitle = legacyRole;
+  }
+
+  return {
+    ...presentation,
+    kind,
+    title,
+    subtitle: normalizeOptionalField(subtitle),
+    period: normalizeOptionalField(period),
+    meta: normalizeOptionalField(meta),
+    summary: normalizeOptionalField(summary),
+    subtitleLines,
+    bullets,
+  };
+}
+
+function parseSkillGroupDirective(lines: string[]): SkillGroupBlock {
+  let title = "";
+  let variant: SkillGroupVariant | undefined;
+  const skills: string[] = [];
+
+  for (const rawLine of lines) {
+    const trimmedLine = rawLine.trim();
+
+    if (!trimmedLine) {
+      continue;
+    }
+
+    const field = splitDirectiveField(trimmedLine, "skill-group");
+
+    if (field.key === "title") {
+      title = field.value;
+      continue;
+    }
+
+    if (field.key === "variant") {
+      if (!isSkillGroupVariant(field.value)) {
+        throw new Error(`Markdown "::skill-group" uses unsupported variant "${field.value}".`);
+      }
+
+      variant = field.value;
+      continue;
+    }
+
+    if (field.key === "skill") {
+      skills.push(field.value);
+      continue;
+    }
+
+    throw new Error(`Markdown "::skill-group" does not support field "${field.key}".`);
+  }
+
+  if (!title || !variant) {
+    throw new Error('Markdown "::skill-group" requires "title" and "variant".');
+  }
+
+  if (!skills.length) {
+    throw new Error('Markdown "::skill-group" requires at least one "skill".');
+  }
+
+  return {
+    title,
+    variant,
+    skills,
+  };
+}
+
+function splitDirectiveField(line: string, directiveName: string) {
+  const separatorIndex = line.indexOf(":");
+
+  if (separatorIndex === -1) {
+    throw new Error(`Markdown "::${directiveName}" has invalid line "${line}".`);
+  }
+
+  const key = line.slice(0, separatorIndex).trim();
+  const value = line.slice(separatorIndex + 1).trim();
+
+  if (!key) {
+    throw new Error(`Markdown "::${directiveName}" has invalid line "${line}".`);
+  }
+
+  return { key, value };
+}
+
+function parseHeroContact(value: string): HeroContact {
+  const [type, label, href, ...rest] = value.split("|").map((part) => part.trim());
+
+  if (!type || !label || !href || rest.length) {
+    throw new Error('Markdown "::hero" contact must use "type|label|href".');
+  }
+
+  if (!isHeroContactType(type)) {
+    throw new Error(`Markdown "::hero" uses unsupported contact type "${type}".`);
+  }
+
+  const safeHref = sanitizeHref(href);
+
+  if (!safeHref) {
+    throw new Error(`Markdown "::hero" contact has unsupported href "${href}".`);
+  }
+
+  return {
+    type,
+    label,
+    href: safeHref,
+  };
+}
+
+function parseCardSubtitleLine(
+  value: string,
+  directiveName: "hero" | "card",
+  fieldName: "subtitleLine" | "roleLine",
+): CardSubtitleLine {
+  const [text, period, ...rest] = value.split("|").map((part) => part.trim());
+
+  if (!text || !period || rest.length) {
+    throw new Error(`Markdown "::${directiveName}" ${fieldName} must use "text|period".`);
+  }
+
+  return { text, period };
+}
+
+function createDefaultPresentation(target: "hero" | "card"): CardPresentation {
+  if (target === "hero") {
+    return {
+      fill: "gray",
+      stroke: "none",
+      headingVariant: "page",
+    };
+  }
+
+  return {
+    fill: "none",
+    stroke: "gray",
+    headingVariant: "card",
+  };
+}
+
+function applyLegacyOutlineVariant(
+  presentation: CardPresentation,
+  hasExplicitFill: boolean,
+  hasExplicitStroke: boolean,
+): CardPresentation {
+  return {
+    ...presentation,
+    fill: hasExplicitFill ? presentation.fill : "none",
+    stroke: hasExplicitStroke ? presentation.stroke : "accent",
+  };
+}
+
+function isCardPresentationField(key: string) {
+  return key === "fill" || key === "stroke" || key === "headingVariant";
+}
+
+function applyCardPresentationField(
+  presentation: CardPresentation,
+  field: { key: string; value: string },
+  directiveName: "hero" | "card",
+) {
+  if (field.key === "fill") {
+    if (!isCardFill(field.value)) {
+      throw new Error(`Markdown "::${directiveName}" uses unsupported fill "${field.value}".`);
+    }
+
+    return {
+      ...presentation,
+      fill: field.value,
+    };
+  }
+
+  if (field.key === "stroke") {
+    if (!isCardStroke(field.value)) {
+      throw new Error(`Markdown "::${directiveName}" uses unsupported stroke "${field.value}".`);
+    }
+
+    return {
+      ...presentation,
+      stroke: field.value,
+    };
+  }
+
+  if (!isCardHeadingVariant(field.value)) {
+    throw new Error(`Markdown "::${directiveName}" uses unsupported headingVariant "${field.value}".`);
+  }
+
+  return {
+    ...presentation,
+    headingVariant: field.value,
+  };
+}
+
+function getContactIcon(type: HeroContactType) {
+  if (type === "phone") {
+    return Phone;
+  }
+
+  if (type === "email") {
+    return Mail;
+  }
+
+  return Send;
+}
+
+function isHeroContactType(value: string): value is HeroContactType {
+  return value === "phone" || value === "email" || value === "telegram";
+}
+
+function isCardKind(value: string): value is CardKind {
+  return value === "experience" || value === "education";
+}
+
+function isCardFill(value: string): value is CardFill {
+  return value === "none" || value === "gray" || value === "accent";
+}
+
+function isCardStroke(value: string): value is CardStroke {
+  return value === "none" || value === "gray" || value === "accent";
+}
+
+function isCardHeadingVariant(value: string): value is CardHeadingVariant {
+  return value === "page" || value === "card";
+}
+
+function isSkillGroupVariant(value: string): value is SkillGroupVariant {
+  return value === "solid" || value === "outline";
+}
+
+function normalizeOptionalField(value: string) {
+  return value.trim() ? value : undefined;
 }

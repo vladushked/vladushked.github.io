@@ -5,11 +5,11 @@ import resumeSource from "./pages/resume.md?raw";
 
 export type MarkdownPageRoute = "/" | "/resume" | "/projects" | "/posts";
 
-type MarkdownPageMetaField = "route" | "title" | "navLabel";
+type MarkdownPageMetaField = "route" | "navLabel";
 
 type ParsedFrontmatter = {
   route: MarkdownPageRoute;
-  title: string;
+  title?: string;
   navLabel: string;
   eyebrow?: string;
   description?: string;
@@ -22,7 +22,7 @@ type ParsedMarkdownSource = {
 
 export type MarkdownPageMeta = {
   route: MarkdownPageRoute;
-  title: string;
+  title?: string;
   navLabel: string;
   eyebrow?: string;
   description?: string;
@@ -125,7 +125,7 @@ function parseFrontmatter(slug: string, source: string): ParsedMarkdownSource {
     meta[key] = stripMatchingQuotes(rawValue);
   }
 
-  for (const field of ["route", "title", "navLabel"] as MarkdownPageMetaField[]) {
+  for (const field of ["route", "navLabel"] as MarkdownPageMetaField[]) {
     if (!meta[field]) {
       throw new Error(`Markdown page "${slug}" is missing required frontmatter field "${field}".`);
     }
@@ -138,7 +138,7 @@ function parseFrontmatter(slug: string, source: string): ParsedMarkdownSource {
   return {
     meta: {
       route: meta.route,
-      title: meta.title,
+      title: normalizeOptionalField(meta.title),
       navLabel: meta.navLabel,
       eyebrow: normalizeOptionalField(meta.eyebrow),
       description: normalizeOptionalField(meta.description),
