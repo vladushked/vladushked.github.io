@@ -40,6 +40,7 @@ type CardBodyContent = {
 type HeroBlock = CardPresentation &
   Omit<CardBodyContent, "bullets"> & {
     name: string;
+    photo?: string;
     contacts: HeroContact[];
   };
 
@@ -299,7 +300,7 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
 function HeroSection({ block }: { block: HeroBlock }) {
   const footer = block.contacts.length ? (
-    <ul className="card-contacts">
+    <ul className="card-contacts hero-contacts">
       {block.contacts.map((contact, index) => {
         const Icon = getContactIcon(contact.type);
         const opensNewTab = /^https?:\/\//.test(contact.href);
@@ -322,20 +323,50 @@ function HeroSection({ block }: { block: HeroBlock }) {
   ) : null;
 
   return (
-    <BaseCard
-      fill={block.fill}
-      stroke={block.stroke}
-      headingVariant={block.headingVariant}
-      heading={<h1 className="card-heading card-heading-page">{block.name}</h1>}
-      title={block.title}
-      subtitle={block.subtitle}
-      period={block.period}
-      meta={block.meta}
-      summary={block.summary}
-      subtitleLines={block.subtitleLines}
-      bullets={[]}
-      footer={footer}
-    />
+    <section
+      className={`card card-fill-${block.fill} card-stroke-${block.stroke} card-heading-${block.headingVariant} ${
+        block.photo ? "hero-card hero-card-with-photo" : "hero-card"
+      }`}
+    >
+      <div className="card-stack hero-card-content">
+        <div className="card-stack-tight">
+          <h1 className="card-heading card-heading-page">{block.name}</h1>
+
+          {block.title ? <p className="card-title">{renderInline(block.title, `${block.name}-title`)}</p> : null}
+
+          {block.subtitleLines.length ? (
+            <div className="card-subtitle-lines">
+              {block.subtitleLines.map((line, index) => (
+                <div key={`${line.text}-${index}`} className="card-subtitle-line">
+                  <span className="card-subtitle">{line.text}</span>
+                  <span className="card-period">{line.period}</span>
+                </div>
+              ))}
+            </div>
+          ) : block.subtitle || block.period ? (
+            <p className="card-subtitle-row">
+              {block.subtitle ? <span className="card-subtitle">{block.subtitle}</span> : null}
+              {block.subtitle && block.period ? <span className="card-separator">·</span> : null}
+              {block.period ? <span className="card-period">{block.period}</span> : null}
+            </p>
+          ) : null}
+
+          {block.meta ? <p className="card-meta">{renderInline(block.meta, `${block.name}-meta`)}</p> : null}
+        </div>
+
+        {block.summary ? (
+          <p className="type-body card-summary">{renderInline(block.summary, `${block.name}-summary`)}</p>
+        ) : null}
+
+        {footer}
+      </div>
+
+      {block.photo ? (
+        <div className="hero-card-media">
+          <img src={block.photo} alt={block.name} className="hero-card-image" />
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -665,6 +696,7 @@ function buildDirectiveBlock(name: string, bodyLines: string[]): MarkdownBlock {
 
 function parseHeroDirective(lines: string[]): HeroBlock {
   let name = "";
+  let photo = "";
   let title = "";
   let subtitle = "";
   let period = "";
@@ -693,6 +725,17 @@ function parseHeroDirective(lines: string[]): HeroBlock {
 
     if (field.key === "contact") {
       contacts.push(parseHeroContact(field.value));
+      continue;
+    }
+
+    if (field.key === "photo") {
+      const safeHref = sanitizeHref(field.value);
+
+      if (!safeHref) {
+        throw new Error(`Markdown "::hero" photo has unsupported href "${field.value}".`);
+      }
+
+      photo = safeHref;
       continue;
     }
 
@@ -772,6 +815,7 @@ function parseHeroDirective(lines: string[]): HeroBlock {
   return {
     ...presentation,
     name,
+    photo: normalizeOptionalField(photo),
     title: normalizeOptionalField(title),
     subtitle: normalizeOptionalField(subtitle),
     period: normalizeOptionalField(period),

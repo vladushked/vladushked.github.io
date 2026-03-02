@@ -8,6 +8,7 @@ description: Tech lead / Senior Python Developer (робототехника)
 
 ::hero
 name: Владислав Плотников
+photo: /images/face.jpg
 fill: gray
 stroke: none
 headingVariant: page

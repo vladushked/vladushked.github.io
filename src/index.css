@@ -1092,6 +1092,31 @@ button {
   color: var(--color-nav-active-text);
 }
 
+.hero-card {
+  gap: 1.5rem;
+}
+
+.hero-card-content {
+  min-width: 0;
+}
+
+.hero-card-media {
+  order: -1;
+  width: min(100%, 20rem);
+  margin-left: auto;
+}
+
+.hero-card-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.hero-contacts {
+  grid-template-columns: minmax(0, 1fr);
+  justify-items: start;
+}
+
 .markdown-content {
   display: flex;
   flex-direction: column;
@@ -1355,6 +1380,23 @@ button {
 }
 
 @media (min-width: 48rem) {
+  .hero-card-with-photo {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 2rem;
+  }
+
+  .hero-card-media {
+    order: 0;
+    flex: 0 0 clamp(12rem, 28vw, 18rem);
+    width: clamp(12rem, 28vw, 18rem);
+  }
+
+  .hero-contacts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .type-section-title {
     font-size: 2rem;
   }

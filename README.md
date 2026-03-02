@@ -74,6 +74,7 @@ Body markdown поддерживает несколько специальных
 - `fill: none|gray|accent`
 - `stroke: none|gray|accent`
 - `headingVariant: page|card`
+- `photo` — URL изображения (например, путь к файлу из `public`)
 - `title`
 - `subtitle`
 - `period`
@@ -87,17 +88,35 @@ Body markdown поддерживает несколько специальных
 - `email`
 - `telegram`
 
+Поведение:
+
+- если `photo` указан, изображение рендерится внутри hero-card
+- на desktop фото располагается справа
+- на mobile фото переносится вверх
+- если `photo` не указан, hero рендерится как обычная текстовая карточка без пустой колонки
+- контакты в hero выравниваются по левому краю
+- для `photo` используйте public-path (`/images/...`) или обычный `https://` URL
+
+Статические изображения для markdown-контента:
+
+- изображения, используемые из markdown, храните в `public/images/`
+- в markdown ссылайтесь на них через public-путь, например `/images/face.jpg`
+- не используйте import изображений из `src/*` для markdown-полей
+
 Пример:
 
 ```md
 ::hero
 name: Владислав Плотников
+photo: /images/face.jpg
 fill: gray
 stroke: none
 headingVariant: page
 title: Tech lead / Senior Python Developer (робототехника)
 meta: Стаж: 8 лет 6 месяцев
+contact: phone|+7 (963) 922-34-64|tel:+79639223464
 contact: email|vladislav.a.plotnikov@yandex.ru|mailto:vladislav.a.plotnikov@yandex.ru
+contact: telegram|@vladislavplotnikov|https://t.me/vladislavplotnikov
 ::
 ```
 

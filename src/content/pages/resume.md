@@ -8,6 +8,7 @@ description: 8+ лет в разработке, архитектуре и инт
 
 ::hero
 name: Владислав Плотников
+photo: /images/face.jpg
 fill: gray
 stroke: none
 headingVariant: page
