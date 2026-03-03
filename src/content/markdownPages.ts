@@ -1,29 +1,30 @@
-import aboutSource from "./pages/about.md?raw";
-import postsSource from "./pages/posts.md?raw";
-import projectsSource from "./pages/projects.md?raw";
-import resumeSource from "./pages/resume.md?raw";
+import menuSource from "./menu.md?raw";
 
-export type MarkdownPageRoute = "/" | "/resume" | "/projects" | "/posts";
+const pageSources = import.meta.glob("./pages/*.md", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
 
-type MarkdownPageMetaField = "route" | "navLabel";
-
-type ParsedFrontmatter = {
-  route: MarkdownPageRoute;
-  title?: string;
-  navLabel: string;
-  eyebrow?: string;
-  description?: string;
-};
+const supportedMenuIcons = ["user", "file-text", "folder-open", "book-open"] as const;
 
 type ParsedMarkdownSource = {
-  meta: ParsedFrontmatter;
+  meta: Record<string, string>;
   content: string;
 };
 
+export type MenuIconKey = (typeof supportedMenuIcons)[number];
+
+export type MenuItemDefinition = {
+  id: string;
+  page: string;
+  route: string;
+  label: string;
+  icon?: MenuIconKey;
+};
+
 export type MarkdownPageMeta = {
-  route: MarkdownPageRoute;
   title?: string;
-  navLabel: string;
   eyebrow?: string;
   description?: string;
 };
@@ -34,21 +35,37 @@ export type MarkdownPageDefinition = {
   content: string;
 };
 
-const routeOrder: MarkdownPageRoute[] = ["/", "/resume", "/projects", "/posts"];
+export type RoutedMarkdownPage = MarkdownPageDefinition & {
+  route: string;
+  menu: MenuItemDefinition;
+};
 
-const parsedPages = [
-  parseMarkdownPage("about", aboutSource),
-  parseMarkdownPage("resume", resumeSource),
-  parseMarkdownPage("projects", projectsSource),
-  parseMarkdownPage("posts", postsSource),
-];
+const parsedPages = Object.entries(pageSources)
+  .map(([path, source]) => parseMarkdownPage(extractSlug(path), source))
+  .sort((left, right) => left.slug.localeCompare(right.slug));
 
 const pageRegistry = buildPageRegistry(parsedPages);
+const menuItems = parseMenu(menuSource);
+buildMenuRegistry(menuItems);
 
-export const navigationPages = routeOrder.map((route) => pageRegistry[route]);
+export const routedPages = buildRoutedPages(menuItems, pageRegistry);
 
-export function getMarkdownPage(route: MarkdownPageRoute) {
-  return pageRegistry[route];
+const pageRouteRegistry = buildRouteRegistry(routedPages);
+
+export const navigationItems = routedPages.map((page) => page.menu);
+
+export function getMarkdownPage(route: string) {
+  return pageRouteRegistry[route];
+}
+
+function extractSlug(path: string) {
+  const match = path.match(/\/([^/]+)\.md$/);
+
+  if (!match) {
+    throw new Error(`Unable to determine markdown page slug for "${path}".`);
+  }
+
+  return match[1];
 }
 
 function parseMarkdownPage(slug: string, source: string): MarkdownPageDefinition {
@@ -56,35 +73,201 @@ function parseMarkdownPage(slug: string, source: string): MarkdownPageDefinition
 
   return {
     slug,
-    meta,
+    meta: {
+      title: normalizeOptionalField(meta.title),
+      eyebrow: normalizeOptionalField(meta.eyebrow),
+      description: normalizeOptionalField(meta.description),
+    },
     content,
   };
 }
 
 function buildPageRegistry(pages: MarkdownPageDefinition[]) {
-  const registry: Partial<Record<MarkdownPageRoute, MarkdownPageDefinition>> = {};
-  const routeOwners = new Map<MarkdownPageRoute, string>();
+  const registry: Record<string, MarkdownPageDefinition> = {};
 
   for (const page of pages) {
-    const existingOwner = routeOwners.get(page.meta.route);
-
-    if (existingOwner) {
-      throw new Error(
-        `Markdown route "${page.meta.route}" is declared by both "${existingOwner}" and "${page.slug}".`,
-      );
+    if (registry[page.slug]) {
+      throw new Error(`Markdown page slug "${page.slug}" is declared more than once.`);
     }
 
-    routeOwners.set(page.meta.route, page.slug);
-    registry[page.meta.route] = page;
+    registry[page.slug] = page;
   }
 
-  for (const route of routeOrder) {
-    if (!registry[route]) {
-      throw new Error(`Missing markdown page for required route "${route}".`);
+  return registry;
+}
+
+function parseMenu(source: string) {
+  const lines = source.replace(/\r\n/g, "\n").split("\n");
+  const items: MenuItemDefinition[] = [];
+  let index = 0;
+
+  while (index < lines.length) {
+    const trimmedLine = lines[index].trim();
+
+    if (!trimmedLine) {
+      index += 1;
+      continue;
+    }
+
+    if (trimmedLine !== "::menu-item") {
+      throw new Error(`Unsupported menu entry "${trimmedLine}". Use "::menu-item".`);
+    }
+
+    const bodyLines: string[] = [];
+    index += 1;
+
+    while (index < lines.length) {
+      const menuLine = lines[index].trim();
+
+      if (menuLine === "::") {
+        items.push(buildMenuItem(bodyLines));
+        index += 1;
+        break;
+      }
+
+      bodyLines.push(lines[index]);
+      index += 1;
+    }
+
+    if (index >= lines.length && lines[lines.length - 1]?.trim() !== "::") {
+      throw new Error('Menu directive "::menu-item" is not closed.');
     }
   }
 
-  return registry as Record<MarkdownPageRoute, MarkdownPageDefinition>;
+  if (!items.length) {
+    throw new Error('Content menu is empty. Add at least one "::menu-item" entry.');
+  }
+
+  return items;
+}
+
+function buildMenuItem(lines: string[]): MenuItemDefinition {
+  let id = "";
+  let page = "";
+  let route = "";
+  let label = "";
+  let icon: MenuIconKey | undefined;
+
+  for (const rawLine of lines) {
+    const trimmedLine = rawLine.trim();
+
+    if (!trimmedLine) {
+      continue;
+    }
+
+    const field = splitField(trimmedLine, "menu");
+
+    if (field.key === "id") {
+      id = field.value;
+      continue;
+    }
+
+    if (field.key === "page") {
+      page = field.value;
+      continue;
+    }
+
+    if (field.key === "route") {
+      route = normalizeRoute(field.value);
+      continue;
+    }
+
+    if (field.key === "label") {
+      label = field.value;
+      continue;
+    }
+
+    if (field.key === "icon") {
+      if (!isMenuIconKey(field.value)) {
+        throw new Error(`Menu uses unsupported icon "${field.value}".`);
+      }
+
+      icon = field.value;
+      continue;
+    }
+
+    throw new Error(`Menu does not support field "${field.key}".`);
+  }
+
+  if (!id || !page || !route || !label) {
+    throw new Error('Menu entry requires "id", "page", "route", and "label".');
+  }
+
+  return {
+    id,
+    page,
+    route,
+    label,
+    icon,
+  };
+}
+
+function buildMenuRegistry(items: MenuItemDefinition[]) {
+  const registry: Record<string, MenuItemDefinition> = {};
+  const routeOwners = new Map<string, string>();
+  const pageOwners = new Map<string, string>();
+
+  for (const item of items) {
+    if (registry[item.id]) {
+      throw new Error(`Menu item "${item.id}" is declared more than once.`);
+    }
+
+    const routeOwner = routeOwners.get(item.route);
+
+    if (routeOwner) {
+      throw new Error(`Menu route "${item.route}" is declared by both "${routeOwner}" and "${item.id}".`);
+    }
+
+    const pageOwner = pageOwners.get(item.page);
+
+    if (pageOwner) {
+      throw new Error(`Markdown page "${item.page}" is linked by both "${pageOwner}" and "${item.id}".`);
+    }
+
+    registry[item.id] = item;
+    routeOwners.set(item.route, item.id);
+    pageOwners.set(item.page, item.id);
+  }
+
+  return registry;
+}
+
+function buildRoutedPages(
+  items: MenuItemDefinition[],
+  pages: Record<string, MarkdownPageDefinition>,
+) {
+  return items.map((item) => {
+    const page = pages[item.page];
+
+    if (!page) {
+      throw new Error(`Menu item "${item.id}" points to missing markdown page "${item.page}".`);
+    }
+
+    return {
+      ...page,
+      route: item.route,
+      menu: item,
+    };
+  });
+}
+
+function buildRouteRegistry(pages: RoutedMarkdownPage[]) {
+  const registry: Record<string, RoutedMarkdownPage> = {};
+  let hasRootRoute = false;
+
+  for (const page of pages) {
+    if (page.route === "/") {
+      hasRootRoute = true;
+    }
+
+    registry[page.route] = page;
+  }
+
+  if (!hasRootRoute) {
+    throw new Error('Content menu requires a "/" route.');
+  }
+
+  return registry;
 }
 
 // The site only supports a small, explicit frontmatter schema.
@@ -125,26 +308,44 @@ function parseFrontmatter(slug: string, source: string): ParsedMarkdownSource {
     meta[key] = stripMatchingQuotes(rawValue);
   }
 
-  for (const field of ["route", "navLabel"] as MarkdownPageMetaField[]) {
-    if (!meta[field]) {
-      throw new Error(`Markdown page "${slug}" is missing required frontmatter field "${field}".`);
-    }
+  return {
+    meta,
+    content: lines.slice(closingIndex + 1).join("\n").trim(),
+  };
+}
+
+function splitField(line: string, scope: string) {
+  const separatorIndex = line.indexOf(":");
+
+  if (separatorIndex === -1) {
+    throw new Error(`Invalid ${scope} field "${line}".`);
   }
 
-  if (!isMarkdownPageRoute(meta.route)) {
-    throw new Error(`Markdown page "${slug}" uses unsupported route "${meta.route}".`);
+  const key = line.slice(0, separatorIndex).trim();
+  const rawValue = line.slice(separatorIndex + 1).trim();
+
+  if (!key) {
+    throw new Error(`Invalid ${scope} field "${line}".`);
   }
 
   return {
-    meta: {
-      route: meta.route,
-      title: normalizeOptionalField(meta.title),
-      navLabel: meta.navLabel,
-      eyebrow: normalizeOptionalField(meta.eyebrow),
-      description: normalizeOptionalField(meta.description),
-    },
-    content: lines.slice(closingIndex + 1).join("\n").trim(),
+    key,
+    value: stripMatchingQuotes(rawValue),
   };
+}
+
+function normalizeRoute(value: string) {
+  const route = value.trim();
+
+  if (!route.startsWith("/")) {
+    throw new Error(`Menu route "${value}" must start with "/".`);
+  }
+
+  if (route.length > 1 && route.endsWith("/")) {
+    return route.slice(0, -1);
+  }
+
+  return route;
 }
 
 function stripMatchingQuotes(value: string) {
@@ -166,6 +367,6 @@ function normalizeOptionalField(value?: string) {
   return value && value.trim() ? value : undefined;
 }
 
-function isMarkdownPageRoute(route: string): route is MarkdownPageRoute {
-  return routeOrder.includes(route as MarkdownPageRoute);
+function isMenuIconKey(value: string): value is MenuIconKey {
+  return supportedMenuIcons.includes(value as MenuIconKey);
 }

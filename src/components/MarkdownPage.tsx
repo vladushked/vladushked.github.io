@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import type { ReactNode } from "react";
 import { Mail, Phone, Send } from "lucide-react";
-import type { MarkdownPageDefinition } from "../content/markdownPages";
+import type { RoutedMarkdownPage } from "../content/markdownPages";
 
 type HeroContactType = "phone" | "email" | "telegram";
 type CardKind = "experience" | "education";
@@ -63,7 +63,7 @@ type MarkdownBlock =
   | { type: "blockquote"; text: string };
 
 type MarkdownPageProps = {
-  page: MarkdownPageDefinition;
+  page: RoutedMarkdownPage;
 };
 
 type BaseCardProps = {
@@ -85,32 +85,22 @@ const inlineTokenPattern = /(\[[^\]]+\]\([^)]+\)|\*\*.+?\*\*|`[^`]+`|\*[^*]+\*)/
 
 export function MarkdownPage({ page }: MarkdownPageProps) {
   const blocks = parseMarkdownBlocks(page.content);
-  const hasHeroBlock = blocks.some((block) => block.type === "hero");
-  const pageTitle = page.meta.title;
-  const showPageHeader = !hasHeroBlock && Boolean(pageTitle);
+  const hasPageHeader = Boolean(page.meta.eyebrow || page.meta.title || page.meta.description);
 
   return (
-    <div className="min-h-screen px-6 py-12 md:px-12 md:py-20">
+    <div className="page-shell min-h-screen">
       <article className="mx-auto max-w-4xl">
-        {showPageHeader ? (
-          <header className="space-y-4 border-b border-[var(--color-border)] pb-8">
+        {hasPageHeader ? (
+          <header className="markdown-page-header space-y-4 border-b border-[var(--color-border)] pb-8">
             {page.meta.eyebrow ? <p className="type-eyebrow">{page.meta.eyebrow}</p> : null}
-            <h1 className="type-page-title">{pageTitle}</h1>
+            {page.meta.title ? <h1 className="type-page-title">{page.meta.title}</h1> : null}
             {page.meta.description ? (
               <p className="type-body-lead ui-text-muted max-w-3xl">{page.meta.description}</p>
             ) : null}
           </header>
         ) : null}
 
-        <div
-          className={
-            showPageHeader
-              ? "markdown-content markdown-content-with-header"
-              : "markdown-content markdown-content-no-header"
-          }
-        >
-          {blocks.map((block, index) => renderBlock(block, index))}
-        </div>
+        <div className="markdown-content">{blocks.map((block, index) => renderBlock(block, index))}</div>
       </article>
     </div>
   );
@@ -300,13 +290,13 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
 function HeroSection({ block }: { block: HeroBlock }) {
   const footer = block.contacts.length ? (
-    <ul className="card-contacts hero-contacts">
+    <ul className="hero-contact-list">
       {block.contacts.map((contact, index) => {
         const Icon = getContactIcon(contact.type);
         const opensNewTab = /^https?:\/\//.test(contact.href);
 
         return (
-          <li key={`${contact.type}-${index}`} className="card-contact-item">
+          <li key={`${contact.type}-${index}`} className="hero-contact-item">
             <Icon size={16} strokeWidth={1.8} />
             <a
               href={contact.href}

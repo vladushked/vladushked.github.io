@@ -1,7 +1,9 @@
 ---
-title: Владислав Плотников
+route: /consulting
+title: 
+navLabel:  консультирование
 eyebrow: vladislavplotnikov.ru
-description: Tech lead / Senior Python Developer (робототехника)
+description: описание
 ---
 
 

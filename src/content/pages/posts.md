@@ -1,9 +1,5 @@
 ---
-route: /posts
-title: ПОСТЫ
-navLabel: ПОСТЫ
+title: Посты
 eyebrow: vladislavplotnikov.ru
 description: Пока тут пусто
 ---
-
-
