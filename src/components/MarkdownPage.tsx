@@ -2,6 +2,8 @@ import { Fragment } from "react";
 import type { ReactNode } from "react";
 import { Mail, Phone, Send } from "lucide-react";
 import type { RoutedMarkdownPage } from "../content/markdownPages";
+import { posts } from "../content/posts";
+import { PostPreviewCard } from "./PostPreviewCard";
 
 type HeroContactType = "phone" | "email" | "telegram";
 type CardKind = "experience" | "education";
@@ -56,6 +58,7 @@ type MarkdownBlock =
   | { type: "hero"; data: HeroBlock }
   | { type: "card"; data: CardBlock }
   | { type: "skill-group"; data: SkillGroupBlock }
+  | { type: "post-feed" }
   | { type: "heading"; level: 2 | 3; text: string }
   | { type: "paragraph"; text: string }
   | { type: "unordered-list"; items: string[] }
@@ -229,6 +232,10 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
   if (block.type === "skill-group") {
     return <SkillGroupSection key={`block-${index}`} block={block.data} />;
+  }
+
+  if (block.type === "post-feed") {
+    return <PostFeedSection key={`block-${index}`} />;
   }
 
   if (block.type === "heading") {
@@ -458,6 +465,16 @@ function SkillGroupSection({ block }: { block: SkillGroupBlock }) {
   );
 }
 
+function PostFeedSection() {
+  return (
+    <section className="post-feed">
+      {posts.map((post) => (
+        <PostPreviewCard key={post.slug} post={post} />
+      ))}
+    </section>
+  );
+}
+
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
@@ -642,7 +659,7 @@ function isListMarker(line: string) {
 }
 
 function isDirectiveStart(line: string) {
-  return /^::(?:hero|card|skill-group)$/.test(line);
+  return /^::(?:hero|card|skill-group|post-feed)$/.test(line);
 }
 
 function parseDirectiveBlock(lines: string[], startIndex: number) {
@@ -681,7 +698,21 @@ function buildDirectiveBlock(name: string, bodyLines: string[]): MarkdownBlock {
     return { type: "skill-group", data: parseSkillGroupDirective(bodyLines) };
   }
 
+  if (name === "post-feed") {
+    return parsePostFeedDirective(bodyLines);
+  }
+
   throw new Error(`Unsupported markdown directive "::${name}".`);
+}
+
+function parsePostFeedDirective(lines: string[]): MarkdownBlock {
+  for (const rawLine of lines) {
+    if (rawLine.trim()) {
+      throw new Error('Markdown "::post-feed" does not support any fields.');
+    }
+  }
+
+  return { type: "post-feed" };
 }
 
 function parseHeroDirective(lines: string[]): HeroBlock {

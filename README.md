@@ -8,7 +8,8 @@
 - `About` (`/`)
 - `Resume` (`/resume`)
 - `Projects` (`/projects`) — временная заглушка
-- `Posts` (`/posts`) — временная заглушка
+- `Posts` (`/posts`) — лента постов
+- `Post detail` (`/posts/:slug`) — отдельная страница поста
 
 ## Стек
 
@@ -23,8 +24,12 @@
 
 - `src/content/menu.md` — источник правды для навигации, route и связи route -> markdown-страница
 - `src/content/pages/*.md` — markdown-страницы, которые реально рендерятся в UI
+- `src/content/posts/*.md` — markdown-посты для `/posts` и `/posts/:slug`
 - `src/content/markdownPages.ts` — загрузка `.md`, frontmatter и реестр страниц
+- `src/content/posts.ts` — загрузка постов, их frontmatter, body и preview-данных
+- `src/content/generated/postVideoThumbnails.ts` — сгенерированный манифест thumbnail для video-превью
 - `src/components/MarkdownPage.tsx` — рендер markdown-подмножества в UI
+- `src/components/PostPage.tsx` — рендер отдельной страницы поста
 - `src/components/Layout.tsx` — навигация и общий layout
 - `src/routes.ts` — маршруты приложения
 - `resume.txt` — исходный источник фактов для обновления профессионального контента
@@ -32,6 +37,7 @@
 ## Markdown-контент
 
 Контент страниц хранится в `src/content/pages/*.md`.
+Контент постов хранится отдельно в `src/content/posts/*.md`.
 
 Каждый файл содержит:
 
@@ -47,12 +53,13 @@
 - page header рендерится одинаково для всех страниц; он может содержать `eyebrow`, `title`, `description`
 - если конкретное поле в frontmatter пустое или отсутствует, оно не рендерится
 - `::hero` не заменяет page header и рендерится как обычный body-блок
+- `::post-feed` рендерит ленту карточек постов внутри обычной markdown-страницы
 - режим mobile layout действует до ширины `999px`, desktop начинается с `1000px`
 - в body разрешены только `##` и `###`
 - body-level `#` не поддерживается
 - поддерживаются абзацы, простые списки, цитаты, ссылки, `**bold**`, `*emphasis*`, `` `inline code` ``
 - поддерживается перенос строки внутри list item через indentation
-- дополнительно поддерживаются структурные директивы `::hero`, `::card`, `::skill-group`
+- дополнительно поддерживаются структурные директивы `::hero`, `::card`, `::skill-group`, `::post-feed`
 - это намеренно ограниченное подмножество markdown с небольшим кастомным DSL, а не полный CommonMark
 
 ### Структурные директивы
@@ -215,6 +222,74 @@ skill: ROS2
 ::
 ```
 
+#### `::post-feed`
+
+Используется в `src/content/pages/posts.md` и рендерит список карточек постов.
+
+Поля не поддерживаются: любой непустой контент внутри директивы считается ошибкой парсера.
+
+Пример:
+
+```md
+::post-feed
+::
+```
+
+### Markdown-посты
+
+Посты в `src/content/posts/*.md` используют отдельный frontmatter:
+
+- `title` — обязательно
+- `date` — обязательно
+- `order` — обязательно, целое число для сортировки в ленте
+- `tags` — обязательно, список через запятую
+
+Пример:
+
+```md
+---
+title: ROS Meetup 2025
+date: 2025
+order: 1
+tags: ROS Meetup, 2025, выступление
+---
+```
+
+Body поста поддерживает те же текстовые блоки (`##`, `###`, абзацы, списки, цитаты, ссылки, inline-formatting) и отдельную директиву `::media`.
+
+#### `::media`
+
+Используется только внутри `src/content/posts/*.md`.
+
+Обязательные поля:
+
+- `kind: image|video`
+- `src`
+
+Опциональные поля:
+
+- `alt`
+- `caption`
+
+Правила:
+
+- первое `::media` в посте используется как превью-медиа для карточки в `/posts`
+- первый текстовый блок поста используется как preview excerpt, если он есть
+- для `kind: video` карточка пытается показать thumbnail, автоматически извлеченный из source URL на этапе build
+- если thumbnail извлечь не удалось, карточка показывает fallback-блок `Видео`
+- карточки постов всегда прозрачные, с серым контуром без заливки
+- на desktop превью-медиа располагается справа, на mobile переносится выше текста
+
+Пример:
+
+```md
+::media
+kind: video
+src: https://vkvideo.ru/video-212217448_456239836
+caption: Видео выступления
+::
+```
+
 ## Запуск локально
 
 Основной dev-flow в этом репозитории идет через Docker-скрипты:
@@ -239,10 +314,13 @@ bash docker/run-dev.sh
 Доступные команды:
 
 ```bash
+node scripts/generate-post-video-thumbnails.mjs
 bash docker/run-npm.sh install
 bash docker/run-check.sh typecheck
 bash docker/run-check.sh build
 ```
+
+`node scripts/generate-post-video-thumbnails.mjs` проходит по `src/content/posts/*.md`, ищет первое `::media kind: video`, пытается получить `og:image`/`twitter:image` по внешнему URL и пересобирает `src/content/generated/postVideoThumbnails.ts`. Генерация best-effort: если внешний источник не отдает thumbnail, в манифест пишется `null`, а сборка не должна падать только из-за этого.
 
 `docker/run-check.sh` использует интерактивный запуск Docker (`-it`). Если команда выполняется из sandbox или агентского инструмента, ей может понадобиться TTY; типичная ошибка в таком случае: `the input device is not a TTY`.
 

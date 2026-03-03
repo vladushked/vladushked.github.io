@@ -18,8 +18,11 @@
           "vite": "6.3.5"
       },
       "scripts": {
+          "predev": "node scripts/generate-post-video-thumbnails.mjs",
           "dev": "vite",
+          "prebuild": "node scripts/generate-post-video-thumbnails.mjs",
           "build": "vite build",
+          "pretypecheck": "node scripts/generate-post-video-thumbnails.mjs",
           "typecheck": "tsc --noEmit"
       }
   }

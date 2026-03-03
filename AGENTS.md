@@ -10,7 +10,6 @@
 
 - фейковые карточки проектов
 - фейковые карточки постов
-- детальные страницы постов
 - placeholder-контент вида `ivan`, `example.com`, `github.com/example`
 - большой UI-kit, если он не нужен для конкретной задачи
 
@@ -24,7 +23,10 @@
 
 - `src/content/menu.md`
 - `src/content/pages/*.md`
+- `src/content/posts/*.md`
 - `src/content/markdownPages.ts`
+- `src/content/posts.ts`
+- `src/content/generated/postVideoThumbnails.ts`
 
 Статические изображения, используемые из markdown-контента:
 
@@ -34,10 +36,12 @@
 
 - если меняется биография, опыт, стек или контакты, сначала сверяйтесь с `resume.txt`
 - затем обновляйте соответствующие markdown-файлы в `src/content/pages/`
+- если меняется список постов или их содержимое, обновляйте `src/content/posts/*.md`
+- если меняется поведение video preview у постов, сверяйтесь с `src/content/generated/postVideoThumbnails.ts` и `scripts/generate-post-video-thumbnails.mjs`
 - не храните большие блоки текста напрямую в page-компонентах, если это можно вынести в markdown-контент
 - изображения, которые подключаются из markdown, храните в `public/images/`
 - если изображение можно задать через markdown, не хардкодьте путь к нему в page-компоненте
-- если меняется frontmatter или правила рендера markdown, сверяйтесь с `src/content/markdownPages.ts` и `src/components/MarkdownPage.tsx`
+- если меняется frontmatter или правила рендера markdown, сверяйтесь с `src/content/markdownPages.ts`, `src/content/posts.ts`, `src/components/MarkdownPage.tsx` и `src/components/PostPage.tsx`
 
 `resume.txt` не должен автоматически парситься приложением. Это ручной источник фактов.
 
@@ -48,12 +52,14 @@
 - `/` — `About`
 - `/resume` — `Resume`
 - `/projects` — заглушка
-- `/posts` — заглушка
+- `/posts` — лента постов
+- `/posts/:slug` — отдельная страница поста
 
 Текущие route components:
 
 - `src/components/Layout.tsx`
 - `src/components/MarkdownPage.tsx`
+- `src/components/PostPage.tsx`
 
 Роутинг находится в:
 
@@ -70,8 +76,12 @@
 - `src/content/pages/resume.md`
 - `src/content/pages/projects.md`
 - `src/content/pages/posts.md`
+- `src/content/posts/*.md`
 - `src/content/markdownPages.ts`
+- `src/content/posts.ts`
+- `src/content/generated/postVideoThumbnails.ts`
 - `src/components/MarkdownPage.tsx`
+- `src/components/PostPage.tsx`
 
 Ограничения текущего markdown-парсера:
 
@@ -80,14 +90,26 @@
 - page header рендерится одинаково для всех страниц; он может содержать `eyebrow`, `title`, `description`
 - если конкретное поле frontmatter пустое или отсутствует, оно не рендерится
 - `::hero` не скрывает стандартный page header и остается обычным body-блоком
+- `::post-feed` рендерит ленту карточек постов внутри обычной markdown-страницы
 - menu item `page` связывает пункт меню с markdown-страницей по slug файла
 - режим mobile layout действует до ширины `999px`, desktop начинается с `1000px`
 - в body разрешены только `##` и `###`
 - body-level `#` запрещен; для заголовков секций используйте `##`
 - поддерживаются абзацы, простые списки, blockquote, ссылки, `**bold**`, `*emphasis*`, `` `inline code` ``
 - поддерживаются multiline list items через indentation
-- дополнительно поддерживаются структурные директивы `::menu-item`, `::hero`, `::card`, `::skill-group`
+- дополнительно поддерживаются структурные директивы `::menu-item`, `::hero`, `::card`, `::skill-group`, `::post-feed`
 - это ограниченное подмножество markdown; не рассчитывайте на полный CommonMark
+
+Ограничения markdown-постов (`src/content/posts/*.md`):
+
+- post frontmatter использует отдельную схему: `title`, `date`, `order`, `tags`
+- `slug` поста задается именем файла
+- body поста поддерживает тот же текстовый набор (`##`, `###`, абзацы, списки, blockquote, ссылки, inline formatting)
+- в body поста из структурных директив поддерживается только `::media`
+- первое `::media` используется как preview media в карточке
+- первый текстовый блок используется как preview excerpt, если он есть
+- для `::media kind: video` thumbnail для карточки пытается автоматически извлекаться на этапе build из внешнего URL
+- если thumbnail извлечь не удалось, карточка показывает fallback-блок `Видео`
 
 Поддерживаемые директивы body markdown:
 
@@ -128,6 +150,19 @@
 - обязательные поля: `title`, `variant`
 - `variant`: `solid` или `outline`
 - повторяемое поле: `skill`
+
+- `::post-feed`
+- используется только в `src/content/pages/posts.md`
+- полей не поддерживает
+- рендерит список карточек постов из `src/content/posts/*.md`
+
+- `::media`
+- используется только в `src/content/posts/*.md`
+- обязательные поля: `kind`, `src`
+- `kind`: `image` или `video`
+- опциональные поля: `alt`, `caption`
+- первое `::media` внутри поста становится preview media в карточке
+- для `video` thumbnail не хранится в markdown; он вычисляется build-скриптом best-effort
 
 Если меняется допустимый markdown-синтаксис или логика рендера в `src/components/MarkdownPage.tsx`, синхронно обновляйте `README.md` и `AGENTS.md`.
 
@@ -204,6 +239,10 @@
 - если у hero есть фото, оно должно оставаться частью той же карточки, а не отдельной карточкой или самостоятельным медиаблоком
 - фото в hero не должно ломать читаемость заголовка и контактов на mobile
 - блоки опыта и образования должны быть прямоугольными, без заливки, с легким контуром затемненного mint-акцента
+- карточки постов должны быть прямоугольными, без заливки, с серым контуром
+- preview media в карточке поста должно оставаться внутри той же карточки
+- на desktop preview media поста должно идти справа
+- на mobile preview media поста должно идти выше текста
 - навыки должны оформляться маленькими стандартизированными прямоугольниками, не pill-формой
 - `solid`-скиллы используются для основных навыков
 - `outline`-скиллы используются для остальных навыков
@@ -234,6 +273,7 @@ bash docker/run-dev.sh
 Все установки зависимостей и проверки нужно выполнять только через Docker-скрипты:
 
 ```bash
+node scripts/generate-post-video-thumbnails.mjs
 bash docker/run-npm.sh install
 bash docker/run-check.sh typecheck
 bash docker/run-check.sh build
@@ -242,6 +282,7 @@ bash docker/run-check.sh build
 Правила для агента:
 
 - не запускать `npm install`, `npm run typecheck` и `npm run build` напрямую на хосте
+- разрешается запускать `node scripts/generate-post-video-thumbnails.mjs` на хосте как часть подготовки content-manifest
 - если нужна установка зависимости, сначала предложить запуск `bash docker/run-npm.sh ...` и дождаться подтверждения пользователя
 - если нужна проверка, сначала предложить запуск `bash docker/run-check.sh ...` и дождаться подтверждения пользователя
 - `docker/run-check.sh` использует `docker exec -it` / `docker run -it`; при запуске агентом или из sandbox может понадобиться TTY
@@ -292,6 +333,9 @@ bash docker/run-check.sh build
 - `src/content/pages/resume.md` должен оставаться полной структурированной CV-страницей
 - для `resume.md` опыт и образование оформляйте через `::card`
 - для `resume.md` навыки оформляйте через `::skill-group`
+- `src/content/pages/posts.md` должен оставаться страницей-индексом и рендерить ленту через `::post-feed`
+- отдельные посты храните в `src/content/posts/*.md`, а не внутри `posts.md`
+- для постов используйте `::media`, если нужен preview image/video
 - `photo` поддерживается только в `::hero`; не расширяйте `::card` и `::skill-group` изображениями без прямого запроса
 
 ## Ожидания по качеству

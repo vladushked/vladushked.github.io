@@ -1,5 +1,8 @@
 ---
 title: Посты
 eyebrow: vladislavplotnikov.ru
-description: Пока тут пусто
+description: Выступления и записи, вынесенные в отдельные посты
 ---
+
+::post-feed
+::
