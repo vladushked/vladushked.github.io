@@ -5,6 +5,8 @@
 Главный источник для контента, который реально рендерится в приложении: `src/content/pages/*.md`
 - если меняется биография, опыт, стек или контакты, сначала сверяйтесь с `resume.txt`
 - затем обновляйте соответствующие markdown-файлы в `src/content/pages/`
+- если меняется список постов или их содержимое, обновляйте `src/content/posts/*.md`
+- если меняется поведение video preview у постов, сверяйтесь с `src/content/generated/postVideoThumbnails.ts` и `scripts/generate-post-video-thumbnails.mjs`
 - не храните большие блоки текста напрямую в page-компонентах, если это можно вынести в markdown-контент
 - изображения, которые подключаются из markdown, храните в `public/images/`
 - если изображение можно задать через markdown, не хардкодьте путь к нему в page-компоненте
@@ -24,6 +26,7 @@ bash docker/run-dev.sh
 Все установки зависимостей и проверки нужно выполнять только через Docker-скрипты:
 
 ```bash
+node scripts/generate-post-video-thumbnails.mjs
 bash docker/run-npm.sh install
 bash docker/run-check.sh typecheck
 bash docker/run-check.sh build

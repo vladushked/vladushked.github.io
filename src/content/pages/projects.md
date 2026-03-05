@@ -1,8 +1,5 @@
 ---
-route: /projects
-title: ПРОЕКТЫ
-navLabel: ПРОЕКТЫ
+title: Проекты
 eyebrow: vladislavplotnikov.ru
 description: Пока тут пусто
 ---
-

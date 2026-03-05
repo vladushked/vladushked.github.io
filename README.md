@@ -8,7 +8,8 @@
 - `About` (`/`)
 - `Resume` (`/resume`)
 - `Projects` (`/projects`) — временная заглушка
-- `Posts` (`/posts`) — временная заглушка
+- `Posts` (`/posts`) — лента постов
+- `Post detail` (`/posts/:slug`) — отдельная страница поста
 
 ## Стек
 
@@ -21,13 +22,14 @@
 
 Основные файлы:
 
+- `src/content/menu.md` — источник правды для навигации, route и связи route -> markdown-страница
 - `src/content/pages/*.md` — markdown-страницы, которые реально рендерятся в UI
+- `src/content/posts/*.md` — markdown-посты для `/posts` и `/posts/:slug`
 - `src/content/markdownPages.ts` — загрузка `.md`, frontmatter и реестр страниц
+- `src/content/posts.ts` — загрузка постов, их frontmatter, body и preview-данных
+- `src/content/generated/postVideoThumbnails.ts` — сгенерированный манифест thumbnail для video-превью
 - `src/components/MarkdownPage.tsx` — рендер markdown-подмножества в UI
-- `src/components/About.tsx` — обертка для главной markdown-страницы
-- `src/components/Resume.tsx` — обертка для markdown-страницы резюме
-- `src/components/Projects.tsx` — обертка для markdown-заглушки проектов
-- `src/components/Posts.tsx` — обертка для markdown-заглушки публикаций
+- `src/components/PostPage.tsx` — рендер отдельной страницы поста
 - `src/components/Layout.tsx` — навигация и общий layout
 - `src/routes.ts` — маршруты приложения
 - `resume.txt` — исходный источник фактов для обновления профессионального контента
@@ -35,31 +37,60 @@
 ## Markdown-контент
 
 Контент страниц хранится в `src/content/pages/*.md`.
+Контент постов хранится отдельно в `src/content/posts/*.md`.
 
 Каждый файл содержит:
 
-- frontmatter с метаданными (`route`, `navLabel`, опционально `title`, `eyebrow`, `description`)
+- frontmatter с метаданными (опционально `title`, `eyebrow`, `description`)
 - markdown body
+
+Навигация и route хранятся отдельно в `src/content/menu.md`.
+Связь страницы с роутом задается только через `menu.md`: `page` в `::menu-item` указывает на slug markdown-файла.
+`title` и `label` можно хранить в обычном регистре: UI сам отображает их в uppercase.
 
 Ограничения текущего markdown-парсера:
 
-- если в body нет `::hero` и `title` указан, `title` из frontmatter рендерится как page `h1`
-- если `title` пустой или отсутствует, стандартный page header не рендерится и дополнительного верхнего отступа перед контентом нет
-- если в body есть `::hero`, основным `h1` страницы становится `name` из этого блока, а стандартный header скрывается
+- page header рендерится одинаково для всех страниц; он может содержать `eyebrow`, `title`, `description`
+- если конкретное поле в frontmatter пустое или отсутствует, оно не рендерится
+- `::hero` не заменяет page header и рендерится как обычный body-блок
+- `::post-feed` рендерит ленту карточек постов внутри обычной markdown-страницы
+- режим mobile layout действует до ширины `999px`, desktop начинается с `1000px`
 - в body разрешены только `##` и `###`
 - body-level `#` не поддерживается
 - поддерживаются абзацы, простые списки, цитаты, ссылки, `**bold**`, `*emphasis*`, `` `inline code` ``
 - поддерживается перенос строки внутри list item через indentation
-- дополнительно поддерживаются структурные директивы `::hero`, `::card`, `::skill-group`
+- дополнительно поддерживаются структурные директивы `::hero`, `::card`, `::skill-group`, `::post-feed`
 - это намеренно ограниченное подмножество markdown с небольшим кастомным DSL, а не полный CommonMark
 
 ### Структурные директивы
 
 Body markdown поддерживает несколько специальных блоков с жестко ограниченным синтаксисом. Это не YAML и не полный markdown-расширитель: неизвестные поля и неправильный формат считаются ошибкой парсера.
 
+### `menu.md`
+
+`src/content/menu.md` использует директиву `::menu-item` и задает:
+
+- `id`
+- `page` — slug файла из `src/content/pages/*.md`
+- `route`
+- `label`
+- `icon`
+
+Пример:
+
+```md
+::menu-item
+id: about
+page: about
+route: /
+label: Главная
+icon: user
+::
+```
+
 #### `::hero`
 
-Используется для титульного блока страницы. Визуально это та же базовая карточка, что и для `::card`, но с большим `h1` и контактами.
+Используется для крупного титульного блока в body страницы. Визуально это та же базовая карточка, что и для `::card`, но с большим `h1`, контактами и опциональным фото.
 
 Обязательные поля:
 
@@ -90,11 +121,13 @@ Body markdown поддерживает несколько специальных
 
 Поведение:
 
+- `::hero` рендерится после общего page header, если header есть
 - если `photo` указан, изображение рендерится внутри hero-card
 - на desktop фото располагается справа
 - на mobile фото переносится вверх
+- на mobile фото центрируется
 - если `photo` не указан, hero рендерится как обычная текстовая карточка без пустой колонки
-- контакты в hero выравниваются по левому краю
+- контакты в hero идут вертикальным списком
 - для `photo` используйте public-path (`/images/...`) или обычный `https://` URL
 
 Статические изображения для markdown-контента:
@@ -189,6 +222,74 @@ skill: ROS2
 ::
 ```
 
+#### `::post-feed`
+
+Используется в `src/content/pages/posts.md` и рендерит список карточек постов.
+
+Поля не поддерживаются: любой непустой контент внутри директивы считается ошибкой парсера.
+
+Пример:
+
+```md
+::post-feed
+::
+```
+
+### Markdown-посты
+
+Посты в `src/content/posts/*.md` используют отдельный frontmatter:
+
+- `title` — обязательно
+- `date` — обязательно
+- `order` — обязательно, целое число для сортировки в ленте
+- `tags` — обязательно, список через запятую
+
+Пример:
+
+```md
+---
+title: ROS Meetup 2025
+date: 2025
+order: 1
+tags: ROS Meetup, 2025, выступление
+---
+```
+
+Body поста поддерживает те же текстовые блоки (`##`, `###`, абзацы, списки, цитаты, ссылки, inline-formatting) и отдельную директиву `::media`.
+
+#### `::media`
+
+Используется только внутри `src/content/posts/*.md`.
+
+Обязательные поля:
+
+- `kind: image|video`
+- `src`
+
+Опциональные поля:
+
+- `alt`
+- `caption`
+
+Правила:
+
+- первое `::media` в посте используется как превью-медиа для карточки в `/posts`
+- первый текстовый блок поста используется как preview excerpt, если он есть
+- для `kind: video` карточка пытается показать thumbnail, автоматически извлеченный из source URL на этапе build
+- если thumbnail извлечь не удалось, карточка показывает fallback-блок `Видео`
+- карточки постов всегда прозрачные, с серым контуром без заливки
+- на desktop превью-медиа располагается справа, на mobile переносится выше текста
+
+Пример:
+
+```md
+::media
+kind: video
+src: https://vkvideo.ru/video-212217448_456239836
+caption: Видео выступления
+::
+```
+
 ## Запуск локально
 
 Основной dev-flow в этом репозитории идет через Docker-скрипты:
@@ -213,10 +314,13 @@ bash docker/run-dev.sh
 Доступные команды:
 
 ```bash
+node scripts/generate-post-video-thumbnails.mjs
 bash docker/run-npm.sh install
 bash docker/run-check.sh typecheck
 bash docker/run-check.sh build
 ```
+
+`node scripts/generate-post-video-thumbnails.mjs` проходит по `src/content/posts/*.md`, ищет первое `::media kind: video`, пытается получить `og:image`/`twitter:image` по внешнему URL и пересобирает `src/content/generated/postVideoThumbnails.ts`. Генерация best-effort: если внешний источник не отдает thumbnail, в манифест пишется `null`, а сборка не должна падать только из-за этого.
 
 `docker/run-check.sh` использует интерактивный запуск Docker (`-it`). Если команда выполняется из sandbox или агентского инструмента, ей может понадобиться TTY; типичная ошибка в таком случае: `the input device is not a TTY`.
 

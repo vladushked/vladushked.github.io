@@ -1,9 +1,4 @@
 ---
-route: /resume
-title: Tech lead / Senior Python Developer (робототехника)
-navLabel: РЕЗЮМЕ
-eyebrow: vladislavplotnikov.ru
-description: 8+ лет в разработке, архитектуре и интеграции ПО для робототехнических систем, computer vision и прикладных аналитических платформ.
 ---
 
 ::hero
