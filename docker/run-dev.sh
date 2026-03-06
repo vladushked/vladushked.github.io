@@ -13,6 +13,7 @@ fi
 
 docker run --rm -it \
   --name "$CONTAINER_NAME" \
+  -e VK_USER_ACCESS_TOKEN="${VK_USER_ACCESS_TOKEN:-}" \
   -p 3000:3000 \
   -v "$(pwd):/app" \
   -v "${NODE_MODULES_VOLUME}:/app/node_modules" \

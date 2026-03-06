@@ -3,8 +3,10 @@ import { createBrowserRouter } from "react-router";
 import { Layout } from "./components/Layout";
 import { MarkdownPage } from "./components/MarkdownPage";
 import { PostPage } from "./components/PostPage";
+import { ProjectPage } from "./components/ProjectPage";
 import { routedPages } from "./content/markdownPages";
 import { posts } from "./content/posts";
+import { projects } from "./content/projects";
 
 const childRoutes = routedPages.map((page) =>
   page.route === "/"
@@ -23,10 +25,15 @@ const postRoutes = posts.map((post) => ({
   element: createElement(PostPage, { post }),
 }));
 
+const projectRoutes = projects.map((project) => ({
+  path: project.route.slice(1),
+  element: createElement(ProjectPage, { project }),
+}));
+
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Layout,
-    children: [...childRoutes, ...postRoutes],
+    children: [...childRoutes, ...postRoutes, ...projectRoutes],
   },
 ]);

@@ -1,5 +1,5 @@
 ---
-title: Посты
+title: БЛОГ
 eyebrow: vladislavplotnikov.ru
 description: Выступления и записи, вынесенные в отдельные посты
 ---

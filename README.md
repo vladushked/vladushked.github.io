@@ -7,9 +7,10 @@
 
 - `About` (`/`)
 - `Resume` (`/resume`)
-- `Projects` (`/projects`) — временная заглушка
-- `Posts` (`/posts`) — лента постов
-- `Post detail` (`/posts/:slug`) — отдельная страница поста
+- `Projects` (`/projects`) — список карточек проектов
+- `Project detail` (`/projects/:slug`) — отдельная страница проекта
+- `БЛОГ` (`/blog`) — лента постов
+- `Post detail` (`/blog/:slug`) — отдельная страница поста
 
 ## Стек
 
@@ -24,7 +25,8 @@
 
 - `src/content/menu.md` — источник правды для навигации, route и связи route -> markdown-страница
 - `src/content/pages/*.md` — markdown-страницы, которые реально рендерятся в UI
-- `src/content/posts/*.md` — markdown-посты для `/posts` и `/posts/:slug`
+- `src/content/posts/*.md` — markdown-посты для `/blog` и `/blog/:slug`
+- `src/content/projects/*.md` — markdown-проекты для `/projects` и `/projects/:slug`
 - `src/content/markdownPages.ts` — загрузка `.md`, frontmatter и реестр страниц
 - `src/content/posts.ts` — загрузка постов, их frontmatter, body и preview-данных
 - `src/content/generated/postVideoThumbnails.ts` — сгенерированный манифест thumbnail для video-превью
@@ -59,7 +61,7 @@
 - body-level `#` не поддерживается
 - поддерживаются абзацы, простые списки, цитаты, ссылки, `**bold**`, `*emphasis*`, `` `inline code` ``
 - поддерживается перенос строки внутри list item через indentation
-- дополнительно поддерживаются структурные директивы `::hero`, `::card`, `::skill-group`, `::post-feed`
+- дополнительно поддерживаются структурные директивы `::hero`, `::card`, `::skill-group`, `::post-feed`, `::project-feed`
 - это намеренно ограниченное подмножество markdown с небольшим кастомным DSL, а не полный CommonMark
 
 ### Структурные директивы
@@ -235,6 +237,19 @@ skill: ROS2
 ::
 ```
 
+#### `::project-feed`
+
+Используется в `src/content/pages/projects.md` и рендерит список карточек проектов в стиле карточек постов.
+
+Поля не поддерживаются: любой непустой контент внутри директивы считается ошибкой парсера.
+
+Пример:
+
+```md
+::project-feed
+::
+```
+
 ### Markdown-посты
 
 Посты в `src/content/posts/*.md` используют отдельный frontmatter:
@@ -273,7 +288,7 @@ Body поста поддерживает те же текстовые блоки
 
 Правила:
 
-- первое `::media` в посте используется как превью-медиа для карточки в `/posts`
+- первое `::media` в посте используется как превью-медиа для карточки в `/blog`
 - первый текстовый блок поста используется как preview excerpt, если он есть
 - для `kind: video` карточка пытается показать thumbnail, автоматически извлеченный из source URL на этапе build
 - если thumbnail извлечь не удалось, карточка показывает fallback-блок `Видео`
@@ -320,7 +335,16 @@ bash docker/run-check.sh typecheck
 bash docker/run-check.sh build
 ```
 
-`node scripts/generate-post-video-thumbnails.mjs` проходит по `src/content/posts/*.md`, ищет первое `::media kind: video`, пытается получить `og:image`/`twitter:image` по внешнему URL и пересобирает `src/content/generated/postVideoThumbnails.ts`. Генерация best-effort: если внешний источник не отдает thumbnail, в манифест пишется `null`, а сборка не должна падать только из-за этого.
+`node scripts/generate-post-video-thumbnails.mjs` проходит по `src/content/posts/*.md`, ищет первое `::media kind: video` и пересобирает `src/content/generated/postVideoThumbnails.ts`.
+
+- Для `vk.com`/`vkvideo.ru` используется `video.get` через `VK_USER_ACCESS_TOKEN`. Если токен не передан или VK API недоступен, генератор пропускает thumbnail и карточка показывает fallback `Видео`.
+- Для остальных источников используется извлечение `og:image`/`twitter:image`.
+
+Пример запуска с токеном:
+
+```bash
+VK_USER_ACCESS_TOKEN=... bash docker/run-check.sh build
+```
 
 `docker/run-check.sh` использует интерактивный запуск Docker (`-it`). Если команда выполняется из sandbox или агентского инструмента, ей может понадобиться TTY; типичная ошибка в таком случае: `the input device is not a TTY`.
 
@@ -337,7 +361,7 @@ bash docker/run-check.sh build
 3. `npm run build`
 4. публикацию папки `build`
 
-Для поддержки прямых заходов и `refresh` на вложенных маршрутах (`/resume`, `/projects`, `/posts`) используется SPA fallback:
+Для поддержки прямых заходов и `refresh` на вложенных маршрутах (`/resume`, `/projects`, `/blog`) используется SPA fallback:
 
 - `public/404.html`
 - скрипт восстановления маршрута в `index.html`

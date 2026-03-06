@@ -27,11 +27,12 @@ NODE_MODULES_VOLUME="vladushked-site-node_modules"
 docker build -t "$IMAGE_NAME" -f docker/Dockerfile .
 
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-  docker exec -it "$CONTAINER_NAME" npm "${npm_args[@]}"
+  docker exec -e VK_USER_ACCESS_TOKEN="${VK_USER_ACCESS_TOKEN:-}" -it "$CONTAINER_NAME" npm "${npm_args[@]}"
   exit 0
 fi
 
 docker run --rm -it \
+  -e VK_USER_ACCESS_TOKEN="${VK_USER_ACCESS_TOKEN:-}" \
   -v "$(pwd):/app" \
   -v "${NODE_MODULES_VOLUME}:/app/node_modules" \
   "$IMAGE_NAME" \

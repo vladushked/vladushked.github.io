@@ -3,7 +3,9 @@ import type { ReactNode } from "react";
 import { Mail, Phone, Send } from "lucide-react";
 import type { RoutedMarkdownPage } from "../content/markdownPages";
 import { posts } from "../content/posts";
+import { projects } from "../content/projects";
 import { PostPreviewCard } from "./PostPreviewCard";
+import { ProjectPreviewCard } from "./ProjectPreviewCard";
 
 type HeroContactType = "phone" | "email" | "telegram";
 type CardKind = "experience" | "education";
@@ -59,6 +61,7 @@ type MarkdownBlock =
   | { type: "card"; data: CardBlock }
   | { type: "skill-group"; data: SkillGroupBlock }
   | { type: "post-feed" }
+  | { type: "project-feed" }
   | { type: "heading"; level: 2 | 3; text: string }
   | { type: "paragraph"; text: string }
   | { type: "unordered-list"; items: string[] }
@@ -236,6 +239,10 @@ function renderBlock(block: MarkdownBlock, index: number) {
 
   if (block.type === "post-feed") {
     return <PostFeedSection key={`block-${index}`} />;
+  }
+
+  if (block.type === "project-feed") {
+    return <ProjectFeedSection key={`block-${index}`} />;
   }
 
   if (block.type === "heading") {
@@ -475,6 +482,16 @@ function PostFeedSection() {
   );
 }
 
+function ProjectFeedSection() {
+  return (
+    <section className="post-feed">
+      {projects.map((project) => (
+        <ProjectPreviewCard key={project.slug} project={project} />
+      ))}
+    </section>
+  );
+}
+
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
@@ -659,7 +676,7 @@ function isListMarker(line: string) {
 }
 
 function isDirectiveStart(line: string) {
-  return /^::(?:hero|card|skill-group|post-feed)$/.test(line);
+  return /^::(?:hero|card|skill-group|post-feed|project-feed)$/.test(line);
 }
 
 function parseDirectiveBlock(lines: string[], startIndex: number) {
@@ -702,6 +719,10 @@ function buildDirectiveBlock(name: string, bodyLines: string[]): MarkdownBlock {
     return parsePostFeedDirective(bodyLines);
   }
 
+  if (name === "project-feed") {
+    return parseProjectFeedDirective(bodyLines);
+  }
+
   throw new Error(`Unsupported markdown directive "::${name}".`);
 }
 
@@ -713,6 +734,16 @@ function parsePostFeedDirective(lines: string[]): MarkdownBlock {
   }
 
   return { type: "post-feed" };
+}
+
+function parseProjectFeedDirective(lines: string[]): MarkdownBlock {
+  for (const rawLine of lines) {
+    if (rawLine.trim()) {
+      throw new Error('Markdown "::project-feed" does not support any fields.');
+    }
+  }
+
+  return { type: "project-feed" };
 }
 
 function parseHeroDirective(lines: string[]): HeroBlock {

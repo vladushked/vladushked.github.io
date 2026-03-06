@@ -25,7 +25,7 @@ icon: folder-open
 ::menu-item
 id: posts
 page: posts
-route: /posts
-label: Посты
+route: /blog
+label: БЛОГ
 icon: book-open
 ::

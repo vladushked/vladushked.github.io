@@ -1,5 +1,8 @@
 ---
 title: Проекты
 eyebrow: vladislavplotnikov.ru
-description: Пока тут пусто
+description: Подборка инженерных проектов с отдельными страницами
 ---
+
+::project-feed
+::

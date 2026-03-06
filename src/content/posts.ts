@@ -69,7 +69,7 @@ function parsePost(slug: string, source: string): PostDefinition {
 
   return {
     slug,
-    route: `/posts/${slug}`,
+    route: `/blog/${slug}`,
     meta: {
       title,
       date,

@@ -1006,6 +1006,7 @@ button {
 }
 
 .type-page-title {
+  color: var(--color-text);
   text-wrap: balance;
   letter-spacing: -.02em;
   text-transform: uppercase;
