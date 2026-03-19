@@ -74,13 +74,21 @@ export function parseDirectiveBlocks<TDirectiveBlock>(
 export function getPreviewText(blocks: TextBlock[]) {
   for (const block of blocks) {
     if (block.type === "paragraph" || block.type === "blockquote") {
-      return block.text;
+      return stripInlineMarkdown(block.text);
     }
 
     if (block.type === "unordered-list" || block.type === "ordered-list") {
-      return block.items[0];
+      return stripInlineMarkdown(block.items[0]);
     }
   }
 
   return undefined;
+}
+
+function stripInlineMarkdown(text: string) {
+  return text
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/`(.+?)`/g, "$1");
 }

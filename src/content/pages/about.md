@@ -3,7 +3,7 @@ route: /about
 showInNav: true
 navLabel: /about
 navIcon: user
-order: 2
+order: 1
 eyebrow: Vladislav Plotnikov
 ---
 

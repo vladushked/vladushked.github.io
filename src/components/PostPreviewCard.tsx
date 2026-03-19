@@ -4,36 +4,49 @@ import type { PostDefinition } from "../content/posts";
 
 type PostPreviewCardProps = {
   post: PostDefinition;
+  filterTags: string[];
+  onTagToggle: (tag: string) => void;
 };
 
-export function PostPreviewCard({ post }: PostPreviewCardProps) {
+export function PostPreviewCard({ post, filterTags, onTagToggle }: PostPreviewCardProps) {
   const hasMedia = Boolean(post.previewMedia);
+  const visibleTags = filterTags.filter((tag) => !isYearTag(tag));
 
   return (
-    <Link
-      to={post.route}
-      className={`post-preview-card ${hasMedia ? "post-preview-card-with-media" : ""}`}
-      aria-label={`Открыть материал "${post.meta.title}"`}
-    >
-      <div className="post-preview-copy">
-        <div className="post-tag-list">
-          {post.meta.tags.map((tag) => (
-            <span key={tag} className="post-tag">
+    <article className={`post-preview-card ${hasMedia ? "post-preview-card-with-media" : ""}`}>
+      <div className="post-preview-tags" aria-label="Теги поста">
+        {visibleTags.map((tag) => (
+          <button
+            key={tag}
+            type="button"
+            className="post-preview-tag-button"
+            onClick={() => onTagToggle(tag)}
+          >
+            <span className="post-preview-tag-text">
               {tag}
             </span>
-          ))}
-        </div>
-        <p className="type-eyebrow">{post.meta.date}</p>
-        <h2 className="post-preview-title">{post.meta.title}</h2>
-        {post.previewText ? <p className="post-preview-excerpt">{post.previewText}</p> : null}
+          </button>
+        ))}
       </div>
 
-      {post.previewMedia ? (
-        <div className="post-preview-side">
-          {renderPostPreviewMedia(post.previewMedia, post.meta.title, post.previewMediaThumbnail)}
+      <Link
+        to={post.route}
+        className="post-preview-link"
+        aria-label={`Открыть материал "${post.meta.title}"`}
+      >
+        <div className="post-preview-copy">
+          <p className="type-eyebrow">{post.meta.date}</p>
+          <h2 className="post-preview-title">{post.meta.title}</h2>
+          {post.previewText ? <p className="post-preview-excerpt">{post.previewText}</p> : null}
         </div>
-      ) : null}
-    </Link>
+
+        {post.previewMedia ? (
+          <div className="post-preview-side">
+            {renderPostPreviewMedia(post.previewMedia, post.meta.title, post.previewMediaThumbnail)}
+          </div>
+        ) : null}
+      </Link>
+    </article>
   );
 }
 
@@ -70,4 +83,8 @@ function renderPostPreviewMedia(
       <span className="post-preview-media-label">Видео</span>
     </div>
   );
+}
+
+function isYearTag(tag: string) {
+  return /^\d{4}$/.test(tag);
 }

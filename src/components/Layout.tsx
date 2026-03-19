@@ -14,6 +14,7 @@ const navIcons: Record<MenuIconKey, typeof User> = {
 export function Layout() {
   const location = useLocation();
   const mainRef = useRef<HTMLElement>(null);
+  const copyrightText = "Этот сайт был подвергнут вайбкодингу, © 2026";
 
   useEffect(() => {
     const mainElement = mainRef.current;
@@ -28,13 +29,12 @@ export function Layout() {
 
   return (
     <div className="app-shell site-shell flex h-screen w-full overflow-hidden">
-      {/* Desktop Sidebar */}
       <aside className="site-sidebar flex-col justify-between w-64 border-r border-[var(--color-border)] bg-[var(--color-bg)] p-8">
         <nav className="flex flex-col gap-2">
           {navigationItems.map((item) => {
             const isActive = isNavigationItemActive(item.route, location.pathname);
             const Icon = item.icon ? navIcons[item.icon] : null;
-            
+
             return (
               <Link
                 key={item.route}
@@ -52,22 +52,21 @@ export function Layout() {
           })}
         </nav>
 
-        <div className="type-caption">
-          © 2026
-        </div>
+        <div className="type-caption">{copyrightText}</div>
       </aside>
 
-      {/* Main Content */}
       <main ref={mainRef} className="site-main flex-1 overflow-y-auto">
-        <Outlet />
+        <div className="site-main-inner">
+          <Outlet />
+          <footer className="site-mobile-footer type-caption">{copyrightText}</footer>
+        </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
       <nav className="site-mobile-nav fixed bottom-0 left-0 right-0 flex items-center justify-around border-t border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-3 z-50">
         {navigationItems.map((item) => {
           const isActive = isNavigationItemActive(item.route, location.pathname);
           const Icon = item.icon ? navIcons[item.icon] : null;
-          
+
           return (
             <Link
               key={item.route}

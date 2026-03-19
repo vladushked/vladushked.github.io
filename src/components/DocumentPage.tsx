@@ -1,7 +1,7 @@
-import { Fragment } from "react";
+import { Fragment, useState } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { ArrowLeft, Mail, Phone, PlayCircle, Send } from "lucide-react";
+import { ArrowLeft, ArrowRight, Mail, Phone, PlayCircle, Send } from "lucide-react";
 import type { SiteDocument } from "../content/documents";
 import { posts } from "../content/documents";
 import type { CardBlock, HeroBlock, PageBlock, SkillGroupBlock } from "../content/pages";
@@ -47,9 +47,9 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
       <PageFrame
         backLink={{ to: document.post.feedRoute, label: "Назад" }}
         headerSupplement={
-          <div className="post-tag-list">
+          <div className="chip-list">
             {document.post.meta.tags.map((tag) => (
-              <span key={tag} className="post-tag">
+              <span key={tag} className="chip chip-static chip-outline">
                 {tag}
               </span>
             ))}
@@ -124,15 +124,7 @@ function renderPageBlock(block: PageBlock, index: number) {
   }
 
   if (block.type === "post-feed") {
-    return (
-      <section key={`page-block-${index}`} className="post-feed">
-        {posts
-          .filter((post) => post.meta.feed === block.feed)
-          .map((post) => (
-            <PostPreviewCard key={post.slug} post={post} />
-          ))}
-      </section>
-    );
+    return <PostFeedSection key={`page-block-${index}`} feed={block.feed} />;
   }
 
   return renderTextBlock(block, index, "page");
@@ -205,6 +197,12 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
 }
 
 function HeroSection({ block }: { block: HeroBlock }) {
+  const actions = block.actions.length ? (
+    <div className="hero-action-list">
+      {block.actions.map((action, index) => renderHeroAction(action, `${action.href}-${index}`))}
+    </div>
+  ) : null;
+
   const footer = block.contacts.length ? (
     <ul className="hero-contact-list">
       {block.contacts.map((contact, index) => {
@@ -263,6 +261,7 @@ function HeroSection({ block }: { block: HeroBlock }) {
           <p className="type-body card-summary">{renderInline(block.summary, `${block.name}-summary`)}</p>
         ) : null}
 
+        {actions}
         {footer}
       </div>
 
@@ -356,16 +355,79 @@ function SkillGroupSection({ block }: { block: SkillGroupBlock }) {
   return (
     <section className="skill-group">
       <p className="type-eyebrow">{block.title}</p>
-      <div className="skill-chip-list">
+      <div className="chip-list">
         {block.skills.map((skill, index) => (
           <span
             key={`${skill}-${index}`}
-            className={block.variant === "solid" ? "skill-chip skill-chip-solid" : "skill-chip skill-chip-outline"}
+            className={block.variant === "solid" ? "chip chip-static chip-solid" : "chip chip-static chip-outline"}
           >
             {skill}
           </span>
         ))}
       </div>
+    </section>
+  );
+}
+
+function PostFeedSection({ feed }: { feed: string }) {
+  const feedPosts = posts.filter((post) => post.meta.feed === feed);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const availableTags = Array.from(
+    new Set(feedPosts.flatMap((post) => [...getVisiblePostTags(post), getPostYearTag(post)])),
+  ).sort((left, right) => left.localeCompare(right, "ru"));
+  const visiblePosts = selectedTags.length
+    ? feedPosts.filter((post) => {
+        const postFilterTags = new Set([...getVisiblePostTags(post), getPostYearTag(post)]);
+        return selectedTags.some((tag) => postFilterTags.has(tag));
+      })
+    : feedPosts;
+  const toggleTag = (tag: string) => {
+    setSelectedTags((currentTags) =>
+      currentTags.includes(tag)
+        ? currentTags.filter((currentTag) => currentTag !== tag)
+        : [...currentTags, tag],
+    );
+  };
+
+  return (
+    <section className="post-feed">
+      {availableTags.length ? (
+        <div className="post-feed-filter">
+          <div className="chip-list" aria-label="Фильтр по тегам">
+            {availableTags.map((tag) => {
+              const isSelected = selectedTags.includes(tag);
+
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  className={`chip chip-button ${isSelected ? "chip-solid" : "chip-outline"}`}
+                  aria-pressed={isSelected}
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                </button>
+              );
+            })}
+            <button
+              type="button"
+              className="post-feed-clear-button"
+              onClick={() => setSelectedTags([])}
+            >
+              Очистить все
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {visiblePosts.map((post) => (
+        <PostPreviewCard
+          key={post.slug}
+          post={post}
+          filterTags={getVisiblePostTags(post)}
+          onTagToggle={toggleTag}
+        />
+      ))}
     </section>
   );
 }
@@ -485,4 +547,51 @@ function getContactIcon(type: HeroContactType) {
   }
 
   return Send;
+}
+
+function renderHeroAction(action: HeroBlock["actions"][number], key: string) {
+  const content = (
+    <>
+      <span>{action.label}</span>
+      <ArrowRight size={16} strokeWidth={1.8} />
+    </>
+  );
+
+  const className = `hero-action hero-action-${action.variant}`;
+
+  if (action.href.startsWith("/")) {
+    return (
+      <Link key={key} to={action.href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  const opensNewTab = /^https?:\/\//.test(action.href);
+
+  return (
+    <a
+      key={key}
+      href={action.href}
+      target={opensNewTab ? "_blank" : undefined}
+      rel={opensNewTab ? "noopener noreferrer" : undefined}
+      className={className}
+    >
+      {content}
+    </a>
+  );
+}
+
+function getVisiblePostTags(post: { meta: { tags: string[]; date: string } }) {
+  const yearTag = getPostYearTag(post);
+
+  return post.meta.tags.filter((tag) => tag !== yearTag && !isYearOnlyTag(tag));
+}
+
+function getPostYearTag(post: { meta: { date: string } }) {
+  return post.meta.date.slice(0, 4);
+}
+
+function isYearOnlyTag(tag: string) {
+  return /^\d{4}$/.test(tag);
 }

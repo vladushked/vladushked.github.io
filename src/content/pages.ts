@@ -49,6 +49,14 @@ type HeroContact = {
   href: string;
 };
 
+type HeroActionVariant = "primary" | "secondary";
+
+type HeroAction = {
+  label: string;
+  href: string;
+  variant: HeroActionVariant;
+};
+
 type CardSubtitleLine = {
   text: string;
   period: string;
@@ -75,6 +83,7 @@ export type HeroBlock = CardPresentation &
     type: "hero";
     name: string;
     photo?: string;
+    actions: HeroAction[];
     contacts: HeroContact[];
   };
 
@@ -237,6 +246,7 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
   let meta = "";
   let summary = "";
   const subtitleLines: CardSubtitleLine[] = [];
+  const actions: HeroAction[] = [];
   const contacts: HeroContact[] = [];
 
   for (const rawLine of lines) {
@@ -314,6 +324,11 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
       continue;
     }
 
+    if (field.key === "action") {
+      actions.push(parseHeroAction(field.value, slug));
+      continue;
+    }
+
     throw new Error(`Page "${slug}" "::hero" does not support field "${field.key}".`);
   }
 
@@ -334,6 +349,7 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
     meta: normalizeOptionalField(meta),
     summary: normalizeOptionalField(summary),
     subtitleLines,
+    actions,
     contacts,
   };
 }
@@ -513,12 +529,36 @@ function parseHeroContact(value: string, slug: string): HeroContact {
   return { type, label, href: safeHref };
 }
 
+function parseHeroAction(value: string, slug: string): HeroAction {
+  const [label, href, variant = "primary", ...rest] = value.split("|").map((part) => part.trim());
+
+  if (!label || !href || !isHeroActionVariant(variant) || rest.length) {
+    throw new Error(`Page "${slug}" hero has invalid action "${value}".`);
+  }
+
+  const safeHref = sanitizeHref(href);
+
+  if (!safeHref) {
+    throw new Error(`Page "${slug}" hero has unsupported action href "${href}".`);
+  }
+
+  return {
+    label,
+    href: safeHref,
+    variant,
+  };
+}
+
 function isMenuIconKey(value: string): value is MenuIconKey {
   return supportedMenuIcons.includes(value as MenuIconKey);
 }
 
 function isHeroContactType(value: string): value is HeroContactType {
   return ["phone", "email", "telegram"].includes(value);
+}
+
+function isHeroActionVariant(value: string): value is HeroActionVariant {
+  return ["primary", "secondary"].includes(value);
 }
 
 function isCardKind(value: string): value is CardKind {

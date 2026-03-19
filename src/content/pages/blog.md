@@ -3,7 +3,7 @@ route: /blog
 showInNav: true
 navLabel: /blog
 navIcon: book-open
-order: 1
+order: 2
 title: 
 eyebrow: Vladislav Plotnikov
 description: 
