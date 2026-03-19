@@ -13,7 +13,7 @@ photo: /images/face.jpg
 fill: gray
 stroke: none
 headingVariant: page
-title: Team lead / Robotics Developer
+title: Team lead / Robotics software developer
 meta: Стаж: более 8 лет
 contact: phone|+7 (963) 922-34-64|tel:+79639223464
 contact: email|vladislav.a.plotnikov@yandex.ru|mailto:vladislav.a.plotnikov@yandex.ru
