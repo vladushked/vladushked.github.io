@@ -1,7 +1,7 @@
 ---
 title: Datafest 2025
-date: 2025
-order: 4
+section: blog
+date: 2026-03-03
 tags: Datafest, 2025, выступление
 ---
 

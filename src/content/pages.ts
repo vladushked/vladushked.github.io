@@ -5,11 +5,11 @@ import {
   parseBoolean,
   parseFrontmatter,
   parseInteger,
-  parseMarkdownBlocks,
   sanitizeHref,
   splitField,
   type TextBlock,
 } from "./sharedMarkdown";
+import { buildRouteRegistry, buildSlugRegistry, extractMarkdownSlug, parseDirectiveBlocks } from "./contentUtils";
 
 const pageSources = import.meta.glob("./pages/*.md", {
   query: "?raw",
@@ -91,9 +91,10 @@ export type SkillGroupBlock = {
   skills: string[];
 };
 
-export type PageFeedBlock =
-  | { type: "post-feed" }
-  | { type: "project-feed" };
+export type PageFeedBlock = {
+  type: "post-feed";
+  section: "blog" | "projects";
+};
 
 export type PageBlock = TextBlock | HeroBlock | CardBlock | SkillGroupBlock | PageFeedBlock;
 
@@ -106,11 +107,11 @@ export type PageDefinition = {
 };
 
 export const pages = Object.entries(pageSources)
-  .map(([path, source]) => parsePage(extractSlug(path), source))
+  .map(([path, source]) => parsePage(extractMarkdownSlug(path, "Page"), source))
   .sort((left, right) => left.route.localeCompare(right.route));
 
-const pageRegistry = buildPageRegistry(pages);
-const routeRegistry = buildRouteRegistry(pages);
+const pageRegistry = buildSlugRegistry(pages, "Page");
+const routeRegistry = buildRouteRegistry(pages, "Page");
 
 export const navigationItems = pages
   .filter((page): page is PageDefinition & { navigation: NavigationItemDefinition } => Boolean(page.navigation))
@@ -123,16 +124,6 @@ export function getPageBySlug(slug: string) {
 
 export function getPageByRoute(route: string) {
   return routeRegistry[route];
-}
-
-function extractSlug(path: string) {
-  const match = path.match(/\/([^/]+)\.md$/);
-
-  if (!match) {
-    throw new Error(`Unable to determine markdown page slug for "${path}".`);
-  }
-
-  return match[1];
 }
 
 function parsePage(slug: string, source: string): PageDefinition {
@@ -177,67 +168,22 @@ function parseNavigationMeta(slug: string, route: string, meta: Record<string, s
   };
 }
 
-function buildPageRegistry(items: PageDefinition[]) {
-  const registry: Record<string, PageDefinition> = {};
-
-  for (const page of items) {
-    if (registry[page.slug]) {
-      throw new Error(`Page slug "${page.slug}" is declared more than once.`);
-    }
-
-    registry[page.slug] = page;
-  }
-
-  return registry;
-}
-
-function buildRouteRegistry(items: PageDefinition[]) {
-  const registry: Record<string, PageDefinition> = {};
+function ensureRootRoute(items: PageDefinition[]) {
   let hasRootRoute = false;
 
   for (const page of items) {
-    if (registry[page.route]) {
-      throw new Error(`Page route "${page.route}" is declared more than once.`);
-    }
-
     if (page.route === "/") {
       hasRootRoute = true;
     }
-
-    registry[page.route] = page;
   }
 
   if (!hasRootRoute) {
     throw new Error('Pages require a "/" route.');
   }
-
-  return registry;
 }
 
 function parsePageBlocks(slug: string, source: string) {
-  const blocks = parseMarkdownBlocks<PageBlock>("Page", slug, source, {
-    parseDirectiveBlock(lines, startIndex, context) {
-      const opener = lines[startIndex].trim();
-      const bodyLines: string[] = [];
-      let index = startIndex + 1;
-
-      while (index < lines.length) {
-        const trimmedLine = lines[index].trim();
-
-        if (trimmedLine === "::") {
-          return {
-            block: buildDirectiveBlock(opener.slice(2), bodyLines, context.slug),
-            nextIndex: index + 1,
-          };
-        }
-
-        bodyLines.push(lines[index]);
-        index += 1;
-      }
-
-      throw new Error(`Page "${context.slug}" directive "${opener}" is not closed.`);
-    },
-  });
+  const blocks = parseDirectiveBlocks("Page", slug, source, buildDirectiveBlock);
 
   const heroCount = blocks.filter((block) => block.type === "hero").length;
 
@@ -262,14 +208,39 @@ function buildDirectiveBlock(name: string, bodyLines: string[], slug: string): P
   }
 
   if (name === "post-feed") {
-    return { type: "post-feed" };
-  }
-
-  if (name === "project-feed") {
-    return { type: "project-feed" };
+    return parsePostFeedDirective(bodyLines, slug);
   }
 
   throw new Error(`Page "${slug}" uses unsupported directive "::${name}".`);
+}
+
+function parsePostFeedDirective(lines: string[], slug: string): PageFeedBlock {
+  let section: PageFeedBlock["section"] = "blog";
+
+  for (const rawLine of lines) {
+    const trimmedLine = rawLine.trim();
+
+    if (!trimmedLine) {
+      continue;
+    }
+
+    const field = splitField(trimmedLine, "Page", slug, "post-feed");
+
+    if (field.key !== "section") {
+      throw new Error(`Page "${slug}" "::post-feed" does not support field "${field.key}".`);
+    }
+
+    if (field.value !== "blog" && field.value !== "projects") {
+      throw new Error(`Page "${slug}" "::post-feed" has unsupported section "${field.value}".`);
+    }
+
+    section = field.value;
+  }
+
+  return {
+    type: "post-feed",
+    section,
+  };
 }
 
 function parseHeroDirective(lines: string[], slug: string): HeroBlock {
@@ -587,3 +558,5 @@ function isCardHeadingVariant(value: string): value is CardHeadingVariant {
 function isSkillGroupVariant(value: string): value is SkillGroupVariant {
   return ["solid", "outline"].includes(value);
 }
+
+ensureRootRoute(pages);

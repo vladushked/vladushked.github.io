@@ -1,385 +1,213 @@
-
 # vladislavplotnikov.ru
 
 Персональный сайт-резюме Владислава Плотникова.
 
-Текущая версия проекта использует единый content-driven page engine для обычных страниц, постов, проектов и React-level 404.
+Сайт собирается из markdown-контента двух типов:
 
-- `БЛОГ` (`/`) — страница-лента постов
-- `About` (`/about`) — профильная страница с интро и резюме
-- `Projects` (`/projects`) — страница-лента проектов
-- `Project detail` (`/projects/:slug`) — отдельная страница проекта
-- `Post detail` (`/blog/:slug`) — отдельная страница поста
-- `404` (`*` и `/404`) — системная страница в общем renderer
+- `src/content/pages/*.md` — обычные страницы сайта
+- `src/content/posts/*.md` — материалы двух секций: `blog` и `projects`
 
-## Стек
+`resume.txt` не рендерится напрямую. Это ручной источник фактов для обновления контента.
 
-- React 18
-- Vite
-- TypeScript
-- React Router
+## Что откуда рендерится
 
-## Структура проекта
+- `pages/*.md` автоматически становятся маршрутами по полю `route`
+- страница из `pages` попадает в меню только если у неё есть `showInNav: true`
+- `posts/*.md` автоматически становятся detail-страницами
+- `section: blog` рендерится по адресу `/blog/:slug`
+- `section: projects` рендерится по адресу `/projects/:slug`
+- `/blog` редиректит на `/`
+- главная страница `/` остаётся обычной markdown-страницей и показывает ленту через `::post-feed`
 
-Основные файлы:
+## Как добавить новую страницу
 
-- `src/content/pages/*.md` — markdown-страницы, которые реально рендерятся в UI
-- `src/content/posts/*.md` — markdown-посты для `/blog` и `/blog/:slug`
-- `src/content/projects/*.md` — markdown-проекты для `/projects` и `/projects/:slug`
-- `src/content/pages.ts` — загрузка обычных страниц, их frontmatter, route и navigation-метаданных
-- `src/content/posts.ts` — загрузка постов, их frontmatter, body и preview-данных
-- `src/content/projects.ts` — загрузка проектов и preview-данных
-- `src/content/documents.ts` — общий registry документов для router/navigation
-- `src/content/generated/postVideoThumbnails.ts` — сгенерированный манифест thumbnail для video-превью
-- `src/components/DocumentPage.tsx` — единый renderer для pages/posts/projects/404
-- `src/components/Layout.tsx` — навигация и общий layout
-- `src/routes.ts` — маршруты приложения
-- `resume.txt` — исходный источник фактов для обновления профессионального контента
+1. Создайте файл `src/content/pages/<slug>.md`.
+2. Добавьте frontmatter с `route`.
+3. Если страница должна появиться в меню, добавьте `showInNav`, `navLabel`, `navIcon`, `order`.
+4. Напишите body в поддерживаемом markdown-формате.
 
-## Markdown-контент
-
-Контент страниц хранится в `src/content/pages/*.md`.
-Контент постов хранится отдельно в `src/content/posts/*.md`.
-
-Каждый файл содержит:
-
-- frontmatter с метаданными (опционально `title`, `eyebrow`, `description`)
-- markdown body
-
-Обычные страницы теперь сами описывают `route` и навигационные поля в frontmatter.
-`title` и `label` рендерятся в том регистре, в котором они заданы в контенте.
-
-Ограничения текущего markdown-парсера:
-
-- page header рендерится одинаково для всех страниц; он может содержать `eyebrow`, `title`, `description`
-- если конкретное поле в frontmatter пустое или отсутствует, оно не рендерится
-- `::hero` не заменяет page header и рендерится как обычный body-блок
-- `::post-feed` рендерит ленту карточек постов внутри обычной markdown-страницы
-- режим mobile layout действует до ширины `999px`, desktop начинается с `1000px`
-- в body разрешены только `##` и `###`
-- body-level `#` не поддерживается
-- поддерживаются абзацы, простые списки, цитаты, ссылки, `**bold**`, `*emphasis*`, `` `inline code` ``
-- поддерживается перенос строки внутри list item через indentation
-- дополнительно поддерживаются структурные директивы `::hero`, `::card`, `::skill-group`, `::post-feed`, `::project-feed`
-- это намеренно ограниченное подмножество markdown с небольшим кастомным DSL, а не полный CommonMark
-
-### Структурные директивы
-
-Body markdown поддерживает несколько специальных блоков с жестко ограниченным синтаксисом. Это не YAML и не полный markdown-расширитель: неизвестные поля и неправильный формат считаются ошибкой парсера.
-
-### Frontmatter страниц
-
-Обычные страницы в `src/content/pages/*.md` поддерживают:
-
-- `route` — обязательный route страницы
-- `title`
-- `eyebrow`
-- `description`
-- `showInNav: true|false`
-- `navLabel` — обязателен, если `showInNav: true`
-- `navIcon` — обязателен, если `showInNav: true`
-- `order` — обязателен, если `showInNav: true`
-
-Пример:
+Минимальный пример:
 
 ```md
 ---
-route: /about
+route: /services
+title: Услуги
+eyebrow: Vladislav Plotnikov
+description: Короткое описание страницы
+---
+
+## Что здесь есть
+
+Текст страницы.
+```
+
+Пример страницы в меню:
+
+```md
+---
+route: /services
 showInNav: true
-navLabel: /about
-navIcon: user
-order: 2
+navLabel: /services
+navIcon: file-text
+order: 4
+title: Услуги
 eyebrow: Vladislav Plotnikov
 ---
 ```
 
-#### `::hero`
+Поддерживаемые `navIcon`:
 
-Используется для крупного титульного блока в body страницы. Визуально это та же базовая карточка, что и для `::card`, но с большим `h1`, контактами и опциональным фото.
+- `user`
+- `file-text`
+- `folder-open`
+- `book-open`
 
-Обязательные поля:
+## Как добавить новый пост
 
-- `name`
+1. Создайте файл `src/content/posts/<slug>.md`.
+2. Укажите `section: blog`.
+3. Укажите `date` строго в формате `YYYY-MM-DD`.
+4. Укажите `tags` через запятую.
+5. Добавьте текст и, при необходимости, `::media`.
 
-Повторяемые поля:
+Пример:
 
-- `contact` в формате `type|label|href`
+```md
+---
+title: ROS Meetup 2026
+section: blog
+date: 2026-03-19
+tags: ROS Meetup, 2026, выступление
+---
 
-Опциональные общие поля карточки:
+::media
+kind: video
+src: https://example.com/video
+caption: Видео выступления
+::
 
-- `fill: none|gray|accent`
-- `stroke: none|gray|accent`
-- `headingVariant: page|card`
-- `photo` — URL изображения (например, путь к файлу из `public`)
-- `title`
-- `subtitle`
-- `period`
-- `meta`
-- `summary`
-- `subtitleLine` в формате `text|period`
-
-Поддерживаемые `type`:
-
-- `phone`
-- `email`
-- `telegram`
+Краткое описание материала.
+```
 
 Поведение:
 
-- `::hero` рендерится после общего page header, если header есть
-- если `photo` указан, изображение рендерится внутри hero-card
-- на desktop фото располагается справа
-- на mobile фото переносится вверх
-- на mobile фото центрируется
-- если `photo` не указан, hero рендерится как обычная текстовая карточка без пустой колонки
-- контакты в hero идут вертикальным списком
-- для `photo` используйте public-path (`/images/...`) или обычный `https://` URL
+- маршрут будет создан автоматически как `/blog/<slug>`
+- карточка появится на главной странице в `post-feed`
+- сортировка на главной идёт по `date` от новых к старым
+- превью-текст берётся из первого текстового блока
+- превью-медиа берётся из первого блока `::media`
 
-Статические изображения для markdown-контента:
+## Как добавить новый проект
 
-- изображения, используемые из markdown, храните в `public/images/`
-- в markdown ссылайтесь на них через public-путь, например `/images/face.jpg`
-- не используйте import изображений из `src/*` для markdown-полей
+Проект теперь использует тот же тип контента, что и пост.
 
-Пример:
-
-```md
-::hero
-name: Владислав Плотников
-photo: /images/face.jpg
-fill: gray
-stroke: none
-headingVariant: page
-title: Tech lead / Senior Python Developer (робототехника)
-meta: Стаж: 8 лет 6 месяцев
-contact: phone|+7 (963) 922-34-64|tel:+79639223464
-contact: email|vladislav.a.plotnikov@yandex.ru|mailto:vladislav.a.plotnikov@yandex.ru
-contact: telegram|@vladislavplotnikov|https://t.me/vladislavplotnikov
-::
-```
-
-#### `::card`
-
-Используется для блоков опыта и образования.
-
-Обязательные поля:
-
-- `kind: experience|education`
-- `title`
-
-Опциональные поля:
-
-- `fill: none|gray|accent`
-- `stroke: none|gray|accent`
-- `headingVariant: page|card`
-- `subtitle`
-- `period`
-- `meta`
-- `summary`
-
-Повторяемые поля:
-
-- `bullet`
-- `subtitleLine` в формате `text|period`
-
-Legacy-алиасы, которые пока поддерживаются парсером:
-
-- `variant: outline`
-- `role`
-- `roleLine`
+1. Создайте файл `src/content/posts/<slug>.md`.
+2. Укажите `section: projects`.
+3. Укажите `date` в формате `YYYY-MM-DD`.
+4. Добавьте `tags`.
 
 Пример:
 
 ```md
-::card
-kind: experience
-title: l-labs.tech / ООО «Система 1»
-fill: none
-stroke: accent
-headingVariant: card
-subtitle: Python-разработчик
-period: Декабрь 2021 — настоящее время
-bullet: Разработка архитектуры верхнего уровня управления.
-::
+---
+title: My Robotics Framework
+section: projects
+date: 2026-03-19
+tags: ROS 2, robotics, architecture
+---
+
+Краткое описание проекта.
 ```
 
-#### `::skill-group`
+Поведение:
 
-Используется для групп навыков.
+- маршрут будет создан автоматически как `/projects/<slug>`
+- карточка попадёт на страницу `/projects`, если на ней используется `::post-feed` с `section: projects`
+- в главную ленту такой материал не попадёт
 
-Обязательные поля:
+## Директивы в `pages`
 
-- `title`
-- `variant: solid|outline`
+Поддерживаются:
 
-Повторяемые поля:
+- `::hero`
+- `::card`
+- `::skill-group`
+- `::post-feed`
 
-- `skill`
+### `::post-feed`
 
-Пример:
+Рендерит список карточек из `posts`.
 
-```md
-::skill-group
-title: Продвинутый уровень
-variant: solid
-skill: Python
-skill: ROS2
-::
-```
+По умолчанию:
 
-#### `::post-feed`
+- если поле не указано, используется `section: blog`
 
-Используется в `src/content/pages/posts.md` и рендерит список карточек постов.
-
-Поля не поддерживаются: любой непустой контент внутри директивы считается ошибкой парсера.
-
-Пример:
+Примеры:
 
 ```md
 ::post-feed
 ::
 ```
 
-#### `::project-feed`
-
-Используется в `src/content/pages/projects.md` и рендерит список карточек проектов в стиле карточек постов.
-
-Поля не поддерживаются: любой непустой контент внутри директивы считается ошибкой парсера.
-
-Пример:
-
 ```md
-::project-feed
+::post-feed
+section: projects
 ::
 ```
 
-### Markdown-посты
+## Директивы в `posts`
 
-Посты в `src/content/posts/*.md` используют отдельный frontmatter:
-
-- `title` — обязательно
-- `date` — обязательно
-- `order` — обязательно, целое число для сортировки в ленте
-- `tags` — обязательно, список через запятую
-
-Пример:
-
-```md
----
-title: ROS Meetup 2025
-date: 2025
-order: 1
-tags: ROS Meetup, 2025, выступление
----
-```
-
-Body поста поддерживает те же текстовые блоки (`##`, `###`, абзацы, списки, цитаты, ссылки, inline-formatting) и отдельную директиву `::media`.
-
-#### `::media`
-
-Используется только внутри `src/content/posts/*.md`.
-
-Обязательные поля:
-
-- `kind: image|video`
-- `src`
-
-Опциональные поля:
-
-- `alt`
-- `caption`
-
-Правила:
-
-- первое `::media` в посте используется как превью-медиа для карточки в `/`
-- первый текстовый блок поста используется как preview excerpt, если он есть
-- для `kind: video` карточка пытается показать thumbnail, автоматически извлеченный из source URL на этапе build
-- если thumbnail извлечь не удалось, карточка показывает fallback-блок `Видео`
-- карточки постов всегда прозрачные, с серым контуром без заливки
-- на desktop превью-медиа располагается справа, на mobile переносится выше текста
+Поддерживается `::media`.
 
 Пример:
 
 ```md
 ::media
-kind: video
-src: https://vkvideo.ru/video-212217448_456239836
-caption: Видео выступления
+kind: image
+src: /images/example.jpg
+alt: Подпись для изображения
+caption: Короткая подпись
 ::
 ```
 
-## Запуск локально
+Правила:
 
-Основной dev-flow в этом репозитории идет через Docker-скрипты:
+- `kind` обязателен: `image` или `video`
+- `src` обязателен
+- первое `::media` используется как превью для карточки
+- для видео thumbnail берётся из `src/content/generated/postVideoThumbnails.ts`, если он был сгенерирован
+
+## Локальная проверка
+
+Предпочтительный способ локальной разработки:
 
 ```bash
 bash docker/run-dev.sh
 ```
 
-Что делает скрипт:
+Dev server поднимается на `http://localhost:3000`.
 
-- собирает dev-образ из `docker/Dockerfile`
-- поднимает контейнер на порту `3000`
-- монтирует текущий проект в `/app`
-- хранит `node_modules` внутри контейнерного volume
+## Проверки и зависимости
 
-После запуска откройте `http://localhost:3000`.
-
-Остановить контейнер можно через `Ctrl + C` в терминале, где запущен скрипт.
-
-## Проверки
-
-Доступные команды:
+Все установки и проверки выполняйте только через Docker-скрипты:
 
 ```bash
-node scripts/generate-post-video-thumbnails.mjs
 bash docker/run-npm.sh install
 bash docker/run-check.sh typecheck
 bash docker/run-check.sh build
 ```
 
-`node scripts/generate-post-video-thumbnails.mjs` проходит по `src/content/posts/*.md`, ищет первое `::media kind: video` и пересобирает `src/content/generated/postVideoThumbnails.ts`.
-
-- Для `vk.com`/`vkvideo.ru` используется `video.get` через `VK_USER_ACCESS_TOKEN`. Если токен не передан или VK API недоступен, генератор пропускает thumbnail и карточка показывает fallback `Видео`.
-- Для остальных источников используется извлечение `og:image`/`twitter:image`.
-
-Пример запуска с токеном:
+Если меняются video-posts и нужны новые превью для видео:
 
 ```bash
-VK_USER_ACCESS_TOKEN=... bash docker/run-check.sh build
+node scripts/generate-post-video-thumbnails.mjs
 ```
 
-`docker/run-check.sh` использует интерактивный запуск Docker (`-it`). Если команда выполняется из sandbox или агентского инструмента, ей может понадобиться TTY; типичная ошибка в таком случае: `the input device is not a TTY`.
+## Практические правила
 
-Если меняется `package.json`, нужно обновить и закоммитить `package-lock.json`.
-
-## Деплой
-
-Сайт деплоится на GitHub Pages через workflow `.github/workflows/deploy-pages.yml`.
-
-Пайплайн делает:
-
-1. `npm install`
-2. `npm run typecheck`
-3. `npm run build`
-4. публикацию папки `build`
-
-Для поддержки прямых заходов и `refresh` на вложенных маршрутах (`/about`, `/projects`, `/blog/:slug`) используется SPA fallback:
-
-- `public/404.html`
-- скрипт восстановления маршрута в `index.html`
-
-Эту механику нельзя удалять без замены на другой способ SPA-маршрутизации.
-
-## Обновление контента
-
-Если нужно обновить опыт, стек или контакты:
-
-1. Сначала обновите `resume.txt`, если меняется исходный контекст.
-2. Затем синхронизируйте соответствующие markdown-файлы в `src/content/pages/`, `src/content/posts/` или `src/content/projects/`.
-3. Для `about.md` используйте объединенный формат: narrative-интро плюс структурированные блоки `::hero`, `::card` и `::skill-group`.
-4. Чтобы добавить новую обычную страницу, достаточно создать один `src/content/pages/<slug>.md` файл с `route`; если страница должна быть в меню, добавьте `showInNav`, `navLabel`, `navIcon` и `order`.
-5. Проверьте изменения через `bash docker/run-check.sh typecheck` и `bash docker/run-check.sh build`.
-
-`resume.txt` не рендерится напрямую в UI. Это источник фактов, а не шаблон для дословного вывода.
-  
+- изображения для markdown храните в `public/images/`
+- в markdown ссылайтесь на них через public-path, например `/images/face.jpg`
+- не хардкодьте markdown-изображения в page-компонентах
+- любые изменения типографики, навигации, отступов и акцентов проверяйте и на desktop, и на mobile
+- bottom navigation должна оставаться читаемой и сбалансированной по ширине
+- длинные заголовки страниц не должны ломать композицию на узком экране

@@ -3,12 +3,12 @@ import {
   normalizeOptionalField,
   normalizeRequiredField,
   parseFrontmatter,
-  parseInteger,
-  parseMarkdownBlocks,
+  normalizeRoute,
   sanitizeHref,
   splitField,
   type TextBlock,
 } from "./sharedMarkdown";
+import { buildRouteRegistry, buildSlugRegistry, extractMarkdownSlug, getPreviewText, parseDirectiveBlocks } from "./contentUtils";
 
 const postSources = import.meta.glob("./posts/*.md", {
   query: "?raw",
@@ -19,9 +19,11 @@ const postSources = import.meta.glob("./posts/*.md", {
 export type PostMeta = {
   title: string;
   date: string;
-  order: number;
+  section: PostSection;
   tags: string[];
 };
+
+export type PostSection = "blog" | "projects";
 
 export type PostMediaBlock = {
   type: "media";
@@ -44,91 +46,39 @@ export type PostDefinition = {
 };
 
 export const posts = Object.entries(postSources)
-  .map(([path, source]) => parsePost(extractSlug(path), source))
-  .sort((left, right) => left.meta.order - right.meta.order);
+  .map(([path, source]) => parsePost(extractMarkdownSlug(path, "Post"), source))
+  .sort(comparePostsByDateDesc);
 
-const postRegistry = buildPostRegistry(posts);
+const postRegistry = buildSlugRegistry(posts, "Post");
+buildRouteRegistry(posts, "Post");
 
 export function getPostBySlug(slug: string) {
   return postRegistry[slug];
 }
 
-function extractSlug(path: string) {
-  const match = path.match(/\/([^/]+)\.md$/);
-
-  if (!match) {
-    throw new Error(`Unable to determine post slug for "${path}".`);
-  }
-
-  return match[1];
-}
-
 function parsePost(slug: string, source: string): PostDefinition {
   const { meta, content } = parseFrontmatter("Post", slug, source);
   const title = normalizeRequiredField(meta.title, "Post", slug, "title");
-  const date = normalizeRequiredField(meta.date, "Post", slug, "date");
+  const date = parsePostDate(meta.date, slug);
+  const section = parsePostSection(meta.section, slug);
   const tags = parseTags(meta.tags, slug);
-  const order = parseInteger(meta.order, "Post", slug, "order");
-  const blocks = parseMarkdownBlocks<PostMediaBlock>("Post", slug, content, {
-    parseDirectiveBlock(lines, startIndex, context) {
-      const opener = lines[startIndex].trim();
-      const bodyLines: string[] = [];
-      let index = startIndex + 1;
-
-      while (index < lines.length) {
-        const trimmedLine = lines[index].trim();
-
-        if (trimmedLine === "::") {
-          return {
-            block: buildDirectiveBlock(opener.slice(2), bodyLines, context.slug),
-            nextIndex: index + 1,
-          };
-        }
-
-        bodyLines.push(lines[index]);
-        index += 1;
-      }
-
-      throw new Error(`Post "${context.slug}" directive "${opener}" is not closed.`);
-    },
-  });
+  const blocks = parseDirectiveBlocks("Post", slug, content, buildDirectiveBlock);
+  const textBlocks = blocks.filter((block): block is TextBlock => block.type !== "media");
 
   return {
     slug,
-    route: `/blog/${slug}`,
+    route: buildPostRoute(section, slug),
     meta: {
       title,
       date,
-      order,
+      section,
       tags,
     },
     blocks,
-    previewText: getPreviewText(blocks),
+    previewText: getPreviewText(textBlocks),
     previewMedia: getPreviewMedia(blocks),
     previewMediaThumbnail: getPreviewMediaThumbnail(slug, blocks),
   };
-}
-
-function buildPostRegistry(items: PostDefinition[]) {
-  const registry: Record<string, PostDefinition> = {};
-  const routeOwners = new Map<string, string>();
-
-  for (const post of items) {
-    if (registry[post.slug]) {
-      throw new Error(`Post slug "${post.slug}" is declared more than once.`);
-    }
-
-    const routeOwner = routeOwners.get(post.route);
-
-    if (routeOwner) {
-      throw new Error(`Post route "${post.route}" is declared by both "${routeOwner}" and "${post.slug}".`);
-    }
-
-    registry[post.slug] = post;
-    routeOwners.set(post.route, post.slug);
-  }
-
-  return registry;
 }
 
 function parseTags(rawTags: string | undefined, slug: string) {
@@ -143,6 +93,38 @@ function parseTags(rawTags: string | undefined, slug: string) {
   }
 
   return tags;
+}
+
+function parsePostSection(rawSection: string | undefined, slug: string): PostSection {
+  const section = normalizeRequiredField(rawSection, "Post", slug, "section");
+
+  if (section !== "blog" && section !== "projects") {
+    throw new Error(`Post "${slug}" has unsupported section "${section}".`);
+  }
+
+  return section;
+}
+
+function parsePostDate(rawDate: string | undefined, slug: string) {
+  const date = normalizeRequiredField(rawDate, "Post", slug, "date");
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error(`Post "${slug}" field "date" must use YYYY-MM-DD format.`);
+  }
+
+  const parsedDate = new Date(`${date}T00:00:00Z`);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    throw new Error(`Post "${slug}" has invalid date "${date}".`);
+  }
+
+  return date;
+}
+
+function buildPostRoute(section: PostSection, slug: string) {
+  const prefix = section === "projects" ? "/projects" : "/blog";
+
+  return normalizeRoute(`${prefix}/${slug}`, "Post", slug, "route");
 }
 
 function buildDirectiveBlock(name: string, bodyLines: string[], slug: string): PostMediaBlock {
@@ -210,20 +192,6 @@ function parseMediaDirective(lines: string[], slug: string): PostMediaBlock {
   };
 }
 
-function getPreviewText(blocks: PostBlock[]) {
-  for (const block of blocks) {
-    if (block.type === "paragraph" || block.type === "blockquote") {
-      return block.text;
-    }
-
-    if (block.type === "unordered-list" || block.type === "ordered-list") {
-      return block.items[0];
-    }
-  }
-
-  return undefined;
-}
-
 function getPreviewMedia(blocks: PostBlock[]) {
   return blocks.find((block): block is PostMediaBlock => block.type === "media");
 }
@@ -240,6 +208,16 @@ function getPreviewMediaThumbnail(slug: string, blocks: PostBlock[]) {
   }
 
   return postVideoThumbnails[slug] ?? undefined;
+}
+
+function comparePostsByDateDesc(left: PostDefinition, right: PostDefinition) {
+  const timeDiff = Date.parse(`${right.meta.date}T00:00:00Z`) - Date.parse(`${left.meta.date}T00:00:00Z`);
+
+  if (timeDiff !== 0) {
+    return timeDiff;
+  }
+
+  return left.slug.localeCompare(right.slug);
 }
 
 function isMediaKind(value: string): value is PostMediaBlock["kind"] {

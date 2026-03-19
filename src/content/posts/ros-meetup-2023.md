@@ -1,7 +1,7 @@
 ---
 title: ROS Meetup 2023
-date: 2023
-order: 2
+section: blog
+date: 2026-03-03
 tags: ROS Meetup, 2023, выступление
 ---
 

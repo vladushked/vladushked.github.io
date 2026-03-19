@@ -1,7 +1,7 @@
 ---
 route: /
 showInNav: true
-navLabel: /
+navLabel: /blog
 navIcon: book-open
 order: 1
 title: 

@@ -1,14 +1,13 @@
 import { Fragment } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { Mail, Phone, PlayCircle, Send } from "lucide-react";
+import { ArrowLeft, Mail, Phone, PlayCircle, Send } from "lucide-react";
 import type { SiteDocument } from "../content/documents";
-import { posts, projects } from "../content/documents";
+import { posts } from "../content/documents";
 import type { CardBlock, HeroBlock, PageBlock, SkillGroupBlock } from "../content/pages";
 import type { PostBlock, PostMediaBlock } from "../content/posts";
 import { sanitizeHref, type TextBlock } from "../content/sharedMarkdown";
 import { PostPreviewCard } from "./PostPreviewCard";
-import { ProjectPreviewCard } from "./ProjectPreviewCard";
 
 type HeroContactType = "phone" | "email" | "telegram";
 
@@ -36,6 +35,7 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
         eyebrow={document.page.meta.eyebrow ? <Link to="/" className="type-eyebrow inline-block">{document.page.meta.eyebrow}</Link> : undefined}
         title={document.page.meta.title}
         description={document.page.meta.description}
+        contentClassName="markdown-content"
       >
         {document.page.blocks.map((block, index) => renderPageBlock(block, index))}
       </PageFrame>
@@ -43,9 +43,14 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
   }
 
   if (document.kind === "post") {
+    const backLink =
+      document.post.meta.section === "projects"
+        ? { to: "/projects", label: "Назад" }
+        : { to: "/", label: "Назад" };
+
     return (
       <PageFrame
-        backLink={{ to: "/", label: "Все записи" }}
+        backLink={backLink}
         headerSupplement={
           <div className="post-tag-list">
             {document.post.meta.tags.map((tag) => (
@@ -57,23 +62,14 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
         }
         eyebrow={<p className="type-eyebrow">{document.post.meta.date}</p>}
         title={document.post.meta.title}
-        contentClassName="post-content"
+        contentClassName="markdown-content"
       >
         {document.post.blocks.map((block, index) => renderPostBlock(block, index, document.post.meta.title))}
       </PageFrame>
     );
   }
 
-  return (
-    <PageFrame
-      backLink={{ to: "/projects", label: "Все проекты" }}
-      title={document.project.meta.title}
-      description={document.project.meta.summary}
-      contentClassName="post-content"
-    >
-      {document.project.blocks.map((block, index) => renderTextBlock(block, index, "project"))}
-    </PageFrame>
-  );
+  throw new Error(`Unsupported document kind "${document satisfies never}".`);
 }
 
 function PageFrame({
@@ -99,9 +95,10 @@ function PageFrame({
     <div className="page-shell min-h-screen">
       <article className="mx-auto max-w-4xl">
         {hasPageHeader ? (
-          <header className="markdown-page-header space-y-4 border-b border-[var(--color-border)] pb-8">
+          <header className="markdown-page-header page-header-stack border-b border-[var(--color-border)] pb-8">
             {backLink ? (
               <Link to={backLink.to} className="post-back-link">
+                <ArrowLeft size={16} strokeWidth={1.9} />
                 {backLink.label}
               </Link>
             ) : null}
@@ -112,7 +109,7 @@ function PageFrame({
           </header>
         ) : null}
 
-        <div className={`markdown-content${contentClassName ? ` ${contentClassName}` : ""}`}>{children}</div>
+        <div className={contentClassName ?? "markdown-content"}>{children}</div>
       </article>
     </div>
   );
@@ -134,19 +131,11 @@ function renderPageBlock(block: PageBlock, index: number) {
   if (block.type === "post-feed") {
     return (
       <section key={`page-block-${index}`} className="post-feed">
-        {posts.map((post) => (
-          <PostPreviewCard key={post.slug} post={post} />
-        ))}
-      </section>
-    );
-  }
-
-  if (block.type === "project-feed") {
-    return (
-      <section key={`page-block-${index}`} className="post-feed">
-        {projects.map((project) => (
-          <ProjectPreviewCard key={project.slug} project={project} />
-        ))}
+        {posts
+          .filter((post) => post.meta.section === block.section)
+          .map((post) => (
+            <PostPreviewCard key={post.slug} post={post} />
+          ))}
       </section>
     );
   }

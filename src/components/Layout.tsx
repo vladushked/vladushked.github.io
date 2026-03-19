@@ -1,6 +1,6 @@
 import { Outlet, useLocation, Link } from "react-router";
 import { User, FileText, FolderOpen, BookOpen } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { navigationItems } from "../content/documents";
 import type { MenuIconKey } from "../content/pages";
 
@@ -13,9 +13,17 @@ const navIcons: Record<MenuIconKey, typeof User> = {
 
 export function Layout() {
   const location = useLocation();
+  const mainRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    const mainElement = mainRef.current;
+
+    if (mainElement) {
+      mainElement.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [location.pathname]);
 
   return (
@@ -50,7 +58,7 @@ export function Layout() {
       </aside>
 
       {/* Main Content */}
-      <main className="site-main flex-1 overflow-y-auto">
+      <main ref={mainRef} className="site-main flex-1 overflow-y-auto">
         <Outlet />
       </main>
 
