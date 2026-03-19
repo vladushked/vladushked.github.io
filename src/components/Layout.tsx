@@ -32,7 +32,7 @@ export function Layout() {
       <aside className="site-sidebar flex-col justify-between w-64 border-r border-[var(--color-border)] bg-[var(--color-bg)] p-8">
         <nav className="flex flex-col gap-2">
           {navigationItems.map((item) => {
-            const isActive = isNavigationItemActive(item.route, item.page, location.pathname);
+            const isActive = isNavigationItemActive(item.route, location.pathname);
             const Icon = item.icon ? navIcons[item.icon] : null;
             
             return (
@@ -65,7 +65,7 @@ export function Layout() {
       {/* Mobile Bottom Navigation */}
       <nav className="site-mobile-nav fixed bottom-0 left-0 right-0 flex items-center justify-around border-t border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-3 z-50">
         {navigationItems.map((item) => {
-          const isActive = isNavigationItemActive(item.route, item.page, location.pathname);
+          const isActive = isNavigationItemActive(item.route, location.pathname);
           const Icon = item.icon ? navIcons[item.icon] : null;
           
           return (
@@ -90,10 +90,6 @@ export function Layout() {
   );
 }
 
-function isNavigationItemActive(route: string, page: string, pathname: string) {
-  if (page === "posts") {
-    return pathname === "/" || pathname.startsWith("/blog/");
-  }
-
-  return pathname === route || (route !== "/" && pathname.startsWith(route));
+function isNavigationItemActive(route: string, pathname: string) {
+  return pathname === route || (route !== "/" && pathname.startsWith(`${route}/`));
 }

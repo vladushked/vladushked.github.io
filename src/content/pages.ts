@@ -93,7 +93,7 @@ export type SkillGroupBlock = {
 
 export type PageFeedBlock = {
   type: "post-feed";
-  section: "blog" | "projects";
+  feed: string;
 };
 
 export type PageBlock = TextBlock | HeroBlock | CardBlock | SkillGroupBlock | PageFeedBlock;
@@ -168,20 +168,6 @@ function parseNavigationMeta(slug: string, route: string, meta: Record<string, s
   };
 }
 
-function ensureRootRoute(items: PageDefinition[]) {
-  let hasRootRoute = false;
-
-  for (const page of items) {
-    if (page.route === "/") {
-      hasRootRoute = true;
-    }
-  }
-
-  if (!hasRootRoute) {
-    throw new Error('Pages require a "/" route.');
-  }
-}
-
 function parsePageBlocks(slug: string, source: string) {
   const blocks = parseDirectiveBlocks("Page", slug, source, buildDirectiveBlock);
 
@@ -215,7 +201,7 @@ function buildDirectiveBlock(name: string, bodyLines: string[], slug: string): P
 }
 
 function parsePostFeedDirective(lines: string[], slug: string): PageFeedBlock {
-  let section: PageFeedBlock["section"] = "blog";
+  let feed = "";
 
   for (const rawLine of lines) {
     const trimmedLine = rawLine.trim();
@@ -226,20 +212,16 @@ function parsePostFeedDirective(lines: string[], slug: string): PageFeedBlock {
 
     const field = splitField(trimmedLine, "Page", slug, "post-feed");
 
-    if (field.key !== "section") {
+    if (field.key !== "feed") {
       throw new Error(`Page "${slug}" "::post-feed" does not support field "${field.key}".`);
     }
 
-    if (field.value !== "blog" && field.value !== "projects") {
-      throw new Error(`Page "${slug}" "::post-feed" has unsupported section "${field.value}".`);
-    }
-
-    section = field.value;
+    feed = normalizeRequiredField(field.value, "Page", slug, "feed");
   }
 
   return {
     type: "post-feed",
-    section,
+    feed: normalizeRequiredField(feed, "Page", slug, "feed"),
   };
 }
 
@@ -558,5 +540,3 @@ function isCardHeadingVariant(value: string): value is CardHeadingVariant {
 function isSkillGroupVariant(value: string): value is SkillGroupVariant {
   return ["solid", "outline"].includes(value);
 }
-
-ensureRootRoute(pages);

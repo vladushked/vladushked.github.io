@@ -8,7 +8,6 @@ type PostPreviewCardProps = {
 
 export function PostPreviewCard({ post }: PostPreviewCardProps) {
   const hasMedia = Boolean(post.previewMedia);
-  const showMetadata = post.meta.section === "blog";
 
   return (
     <Link
@@ -17,16 +16,14 @@ export function PostPreviewCard({ post }: PostPreviewCardProps) {
       aria-label={`Открыть материал "${post.meta.title}"`}
     >
       <div className="post-preview-copy">
-        {showMetadata ? (
-          <div className="post-tag-list">
-            {post.meta.tags.map((tag) => (
-              <span key={tag} className="post-tag">
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
-        <p className="type-eyebrow">{showMetadata ? post.meta.date : "/projects"}</p>
+        <div className="post-tag-list">
+          {post.meta.tags.map((tag) => (
+            <span key={tag} className="post-tag">
+              {tag}
+            </span>
+          ))}
+        </div>
+        <p className="type-eyebrow">{post.meta.date}</p>
         <h2 className="post-preview-title">{post.meta.title}</h2>
         {post.previewText ? <p className="post-preview-excerpt">{post.previewText}</p> : null}
       </div>

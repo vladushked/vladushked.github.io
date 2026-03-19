@@ -1,3 +1,4 @@
+import { buildRouteRegistry } from "./contentUtils";
 import type { PageDefinition } from "./pages";
 import { getPageBySlug, navigationItems, pages } from "./pages";
 import type { PostDefinition } from "./posts";
@@ -24,6 +25,8 @@ export const pageDocuments: SiteDocument[] = pages.map((page) => createSiteDocum
 export const postDocuments: SiteDocument[] = posts.map((post) => createSiteDocument("post", post));
 
 export const siteDocuments = [...pageDocuments, ...postDocuments];
+
+buildRouteRegistry(siteDocuments, "Site document");
 
 export const notFoundDocument = getPageBySlug("not-found");
 

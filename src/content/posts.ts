@@ -1,4 +1,5 @@
 import { postVideoThumbnails } from "./generated/postVideoThumbnails";
+import { getFeedById } from "./feeds";
 import {
   normalizeOptionalField,
   normalizeRequiredField,
@@ -10,7 +11,7 @@ import {
 } from "./sharedMarkdown";
 import { buildRouteRegistry, buildSlugRegistry, extractMarkdownSlug, getPreviewText, parseDirectiveBlocks } from "./contentUtils";
 
-const postSources = import.meta.glob("./posts/*.md", {
+const postSources = import.meta.glob("./cards/**/*.md", {
   query: "?raw",
   import: "default",
   eager: true,
@@ -19,11 +20,9 @@ const postSources = import.meta.glob("./posts/*.md", {
 export type PostMeta = {
   title: string;
   date: string;
-  section: PostSection;
+  feed: string;
   tags: string[];
 };
-
-export type PostSection = "blog" | "projects";
 
 export type PostMediaBlock = {
   type: "media";
@@ -38,6 +37,7 @@ export type PostBlock = TextBlock | PostMediaBlock;
 export type PostDefinition = {
   slug: string;
   route: string;
+  feedRoute: string;
   meta: PostMeta;
   blocks: PostBlock[];
   previewText?: string;
@@ -60,18 +60,24 @@ function parsePost(slug: string, source: string): PostDefinition {
   const { meta, content } = parseFrontmatter("Post", slug, source);
   const title = normalizeRequiredField(meta.title, "Post", slug, "title");
   const date = parsePostDate(meta.date, slug);
-  const section = parsePostSection(meta.section, slug);
+  const feed = parsePostFeed(meta.feed, slug);
   const tags = parseTags(meta.tags, slug);
   const blocks = parseDirectiveBlocks("Post", slug, content, buildDirectiveBlock);
   const textBlocks = blocks.filter((block): block is TextBlock => block.type !== "media");
+  const feedDefinition = getFeedById(feed);
+
+  if (!feedDefinition) {
+    throw new Error(`Post "${slug}" references unknown feed "${feed}".`);
+  }
 
   return {
     slug,
-    route: buildPostRoute(section, slug),
+    route: buildPostRoute(feedDefinition.pageRoute, slug),
+    feedRoute: feedDefinition.pageRoute,
     meta: {
       title,
       date,
-      section,
+      feed,
       tags,
     },
     blocks,
@@ -95,14 +101,8 @@ function parseTags(rawTags: string | undefined, slug: string) {
   return tags;
 }
 
-function parsePostSection(rawSection: string | undefined, slug: string): PostSection {
-  const section = normalizeRequiredField(rawSection, "Post", slug, "section");
-
-  if (section !== "blog" && section !== "projects") {
-    throw new Error(`Post "${slug}" has unsupported section "${section}".`);
-  }
-
-  return section;
+function parsePostFeed(rawFeed: string | undefined, slug: string) {
+  return normalizeRequiredField(rawFeed, "Post", slug, "feed");
 }
 
 function parsePostDate(rawDate: string | undefined, slug: string) {
@@ -121,8 +121,8 @@ function parsePostDate(rawDate: string | undefined, slug: string) {
   return date;
 }
 
-function buildPostRoute(section: PostSection, slug: string) {
-  const prefix = section === "projects" ? "/projects" : "/blog";
+function buildPostRoute(feedRoute: string, slug: string) {
+  const prefix = feedRoute === "/" ? "" : feedRoute;
 
   return normalizeRoute(`${prefix}/${slug}`, "Post", slug, "route");
 }

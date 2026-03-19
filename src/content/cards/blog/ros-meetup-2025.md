@@ -1,6 +1,6 @@
 ---
 title: ROS Meetup 2025
-section: blog
+feed: blog
 date: 2026-03-03
 tags: ROS Meetup, 2025, выступление
 ---

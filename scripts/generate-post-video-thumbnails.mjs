@@ -4,19 +4,19 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(__dirname, "..");
-const postsDir = path.join(projectRoot, "src", "content", "posts");
+const cardsDir = path.join(projectRoot, "src", "content", "cards");
 const outputDir = path.join(projectRoot, "src", "content", "generated");
 const outputFile = path.join(outputDir, "postVideoThumbnails.ts");
 const vkUserAccessToken = process.env.VK_USER_ACCESS_TOKEN?.trim() ?? "";
 const vkApiVersion = "5.199";
 let hasWarnedAboutMissingVkToken = false;
 
-const postFiles = (await readdir(postsDir)).filter((entry) => entry.endsWith(".md")).sort();
+const postFiles = (await getMarkdownFiles(cardsDir)).sort();
 const manifest = {};
 
-for (const filename of postFiles) {
-  const slug = filename.slice(0, -3);
-  const source = await readFile(path.join(postsDir, filename), "utf8");
+for (const filepath of postFiles) {
+  const slug = path.basename(filepath, ".md");
+  const source = await readFile(filepath, "utf8");
   const firstVideoMediaSrc = extractFirstVideoMediaSource(source);
 
   if (!firstVideoMediaSrc) {
@@ -29,6 +29,26 @@ for (const filename of postFiles) {
 
 await mkdir(outputDir, { recursive: true });
 await writeFile(outputFile, renderManifest(manifest), "utf8");
+
+async function getMarkdownFiles(rootDir) {
+  const entries = await readdir(rootDir, { withFileTypes: true });
+  const files = [];
+
+  for (const entry of entries) {
+    const entryPath = path.join(rootDir, entry.name);
+
+    if (entry.isDirectory()) {
+      files.push(...(await getMarkdownFiles(entryPath)));
+      continue;
+    }
+
+    if (entry.isFile() && entry.name.endsWith(".md")) {
+      files.push(entryPath);
+    }
+  }
+
+  return files;
+}
 
 function extractFirstVideoMediaSource(source) {
   const normalized = source.replace(/\r\n/g, "\n");

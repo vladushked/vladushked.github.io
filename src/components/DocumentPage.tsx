@@ -43,14 +43,9 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
   }
 
   if (document.kind === "post") {
-    const backLink =
-      document.post.meta.section === "projects"
-        ? { to: "/projects", label: "Назад" }
-        : { to: "/", label: "Назад" };
-
     return (
       <PageFrame
-        backLink={backLink}
+        backLink={{ to: document.post.feedRoute, label: "Назад" }}
         headerSupplement={
           <div className="post-tag-list">
             {document.post.meta.tags.map((tag) => (
@@ -132,7 +127,7 @@ function renderPageBlock(block: PageBlock, index: number) {
     return (
       <section key={`page-block-${index}`} className="post-feed">
         {posts
-          .filter((post) => post.meta.section === block.section)
+          .filter((post) => post.meta.feed === block.feed)
           .map((post) => (
             <PostPreviewCard key={post.slug} post={post} />
           ))}
