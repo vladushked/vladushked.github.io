@@ -3,14 +3,14 @@
 
 Персональный сайт-резюме Владислава Плотникова.
 
-Текущая версия проекта больше не использует старый шаблон с карточками постов и проектов. Сайт сведен к компактной структуре:
+Текущая версия проекта использует единый content-driven page engine для обычных страниц, постов, проектов и React-level 404.
 
-- `About` (`/`)
-- `Resume` (`/resume`)
-- `Projects` (`/projects`) — список карточек проектов
+- `БЛОГ` (`/`) — страница-лента постов
+- `About` (`/about`) — профильная страница с интро и резюме
+- `Projects` (`/projects`) — страница-лента проектов
 - `Project detail` (`/projects/:slug`) — отдельная страница проекта
-- `БЛОГ` (`/blog`) — лента постов
 - `Post detail` (`/blog/:slug`) — отдельная страница поста
+- `404` (`*` и `/404`) — системная страница в общем renderer
 
 ## Стек
 
@@ -23,15 +23,15 @@
 
 Основные файлы:
 
-- `src/content/menu.md` — источник правды для навигации, route и связи route -> markdown-страница
 - `src/content/pages/*.md` — markdown-страницы, которые реально рендерятся в UI
 - `src/content/posts/*.md` — markdown-посты для `/blog` и `/blog/:slug`
 - `src/content/projects/*.md` — markdown-проекты для `/projects` и `/projects/:slug`
-- `src/content/markdownPages.ts` — загрузка `.md`, frontmatter и реестр страниц
+- `src/content/pages.ts` — загрузка обычных страниц, их frontmatter, route и navigation-метаданных
 - `src/content/posts.ts` — загрузка постов, их frontmatter, body и preview-данных
+- `src/content/projects.ts` — загрузка проектов и preview-данных
+- `src/content/documents.ts` — общий registry документов для router/navigation
 - `src/content/generated/postVideoThumbnails.ts` — сгенерированный манифест thumbnail для video-превью
-- `src/components/MarkdownPage.tsx` — рендер markdown-подмножества в UI
-- `src/components/PostPage.tsx` — рендер отдельной страницы поста
+- `src/components/DocumentPage.tsx` — единый renderer для pages/posts/projects/404
 - `src/components/Layout.tsx` — навигация и общий layout
 - `src/routes.ts` — маршруты приложения
 - `resume.txt` — исходный источник фактов для обновления профессионального контента
@@ -46,9 +46,8 @@
 - frontmatter с метаданными (опционально `title`, `eyebrow`, `description`)
 - markdown body
 
-Навигация и route хранятся отдельно в `src/content/menu.md`.
-Связь страницы с роутом задается только через `menu.md`: `page` в `::menu-item` указывает на slug markdown-файла.
-`title` и `label` можно хранить в обычном регистре: UI сам отображает их в uppercase.
+Обычные страницы теперь сами описывают `route` и навигационные поля в frontmatter.
+`title` и `label` рендерятся в том регистре, в котором они заданы в контенте.
 
 Ограничения текущего markdown-парсера:
 
@@ -68,26 +67,30 @@
 
 Body markdown поддерживает несколько специальных блоков с жестко ограниченным синтаксисом. Это не YAML и не полный markdown-расширитель: неизвестные поля и неправильный формат считаются ошибкой парсера.
 
-### `menu.md`
+### Frontmatter страниц
 
-`src/content/menu.md` использует директиву `::menu-item` и задает:
+Обычные страницы в `src/content/pages/*.md` поддерживают:
 
-- `id`
-- `page` — slug файла из `src/content/pages/*.md`
-- `route`
-- `label`
-- `icon`
+- `route` — обязательный route страницы
+- `title`
+- `eyebrow`
+- `description`
+- `showInNav: true|false`
+- `navLabel` — обязателен, если `showInNav: true`
+- `navIcon` — обязателен, если `showInNav: true`
+- `order` — обязателен, если `showInNav: true`
 
 Пример:
 
 ```md
-::menu-item
-id: about
-page: about
-route: /
-label: Главная
-icon: user
-::
+---
+route: /about
+showInNav: true
+navLabel: /about
+navIcon: user
+order: 2
+eyebrow: Vladislav Plotnikov
+---
 ```
 
 #### `::hero`
@@ -288,7 +291,7 @@ Body поста поддерживает те же текстовые блоки
 
 Правила:
 
-- первое `::media` в посте используется как превью-медиа для карточки в `/blog`
+- первое `::media` в посте используется как превью-медиа для карточки в `/`
 - первый текстовый блок поста используется как preview excerpt, если он есть
 - для `kind: video` карточка пытается показать thumbnail, автоматически извлеченный из source URL на этапе build
 - если thumbnail извлечь не удалось, карточка показывает fallback-блок `Видео`
@@ -361,7 +364,7 @@ VK_USER_ACCESS_TOKEN=... bash docker/run-check.sh build
 3. `npm run build`
 4. публикацию папки `build`
 
-Для поддержки прямых заходов и `refresh` на вложенных маршрутах (`/resume`, `/projects`, `/blog`) используется SPA fallback:
+Для поддержки прямых заходов и `refresh` на вложенных маршрутах (`/about`, `/projects`, `/blog/:slug`) используется SPA fallback:
 
 - `public/404.html`
 - скрипт восстановления маршрута в `index.html`
@@ -373,9 +376,9 @@ VK_USER_ACCESS_TOKEN=... bash docker/run-check.sh build
 Если нужно обновить опыт, стек или контакты:
 
 1. Сначала обновите `resume.txt`, если меняется исходный контекст.
-2. Затем синхронизируйте соответствующие markdown-файлы в `src/content/pages/`.
-3. Для `about.md` держите контент агрегированным и narrative-формата, без подробного employer-by-employer таймлайна.
-4. Для `resume.md` используйте полный структурированный формат через `::hero`, `::card` и `::skill-group`.
+2. Затем синхронизируйте соответствующие markdown-файлы в `src/content/pages/`, `src/content/posts/` или `src/content/projects/`.
+3. Для `about.md` используйте объединенный формат: narrative-интро плюс структурированные блоки `::hero`, `::card` и `::skill-group`.
+4. Чтобы добавить новую обычную страницу, достаточно создать один `src/content/pages/<slug>.md` файл с `route`; если страница должна быть в меню, добавьте `showInNav`, `navLabel`, `navIcon` и `order`.
 5. Проверьте изменения через `bash docker/run-check.sh typecheck` и `bash docker/run-check.sh build`.
 
 `resume.txt` не рендерится напрямую в UI. Это источник фактов, а не шаблон для дословного вывода.

@@ -1,6 +1,6 @@
 import { Link } from "react-router";
+import { PlayCircle } from "lucide-react";
 import type { PostDefinition } from "../content/posts";
-import { renderPostPreviewMedia } from "./PostPage";
 
 type PostPreviewCardProps = {
   post: PostDefinition;
@@ -34,5 +34,40 @@ export function PostPreviewCard({ post }: PostPreviewCardProps) {
         </div>
       ) : null}
     </Link>
+  );
+}
+
+function renderPostPreviewMedia(
+  media: NonNullable<PostDefinition["previewMedia"]>,
+  title: string,
+  thumbnailUrl?: string,
+) {
+  if (thumbnailUrl) {
+    return (
+      <div className="post-preview-media-frame">
+        <img src={thumbnailUrl} alt={media.alt ?? title} className="post-preview-image" />
+        {media.kind === "video" ? (
+          <span className="post-preview-video-overlay" aria-hidden="true">
+            <PlayCircle size={32} strokeWidth={1.7} />
+            <span className="post-preview-media-label">Видео</span>
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  if (media.kind === "image") {
+    return (
+      <div className="post-preview-media-frame">
+        <img src={media.src} alt={media.alt ?? title} className="post-preview-image" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="post-preview-media-frame post-preview-video" aria-label={`Видео "${title}"`}>
+      <PlayCircle size={32} strokeWidth={1.7} />
+      <span className="post-preview-media-label">Видео</span>
+    </div>
   );
 }

@@ -1,39 +1,50 @@
 import { createElement } from "react";
 import { createBrowserRouter } from "react-router";
+import { DocumentPage } from "./components/DocumentPage";
 import { Layout } from "./components/Layout";
-import { MarkdownPage } from "./components/MarkdownPage";
-import { PostPage } from "./components/PostPage";
-import { ProjectPage } from "./components/ProjectPage";
-import { routedPages } from "./content/markdownPages";
-import { posts } from "./content/posts";
-import { projects } from "./content/projects";
+import { notFoundDocument, pageDocuments, postDocuments, projectDocuments } from "./content/documents";
 
-const childRoutes = routedPages.map((page) =>
-  page.route === "/"
+const childRoutes = pageDocuments.map((document) =>
+  document.route === "/"
     ? {
         index: true,
-        element: createElement(MarkdownPage, { page }),
+        element: createElement(DocumentPage, { document }),
       }
     : {
-        path: page.route.slice(1),
-        element: createElement(MarkdownPage, { page }),
+        path: document.route.slice(1),
+        element: createElement(DocumentPage, { document }),
       },
 );
 
-const postRoutes = posts.map((post) => ({
-  path: post.route.slice(1),
-  element: createElement(PostPage, { post }),
+const postRoutes = postDocuments.map((document) => ({
+  path: document.route.slice(1),
+  element: createElement(DocumentPage, { document }),
 }));
 
-const projectRoutes = projects.map((project) => ({
-  path: project.route.slice(1),
-  element: createElement(ProjectPage, { project }),
+const projectRoutes = projectDocuments.map((document) => ({
+  path: document.route.slice(1),
+  element: createElement(DocumentPage, { document }),
 }));
 
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Layout,
-    children: [...childRoutes, ...postRoutes, ...projectRoutes],
+    children: [
+      ...childRoutes,
+      ...postRoutes,
+      ...projectRoutes,
+      {
+        path: "*",
+        element: createElement(DocumentPage, {
+          document: {
+            kind: "page",
+            slug: notFoundDocument.slug,
+            route: notFoundDocument.route,
+            page: notFoundDocument,
+          },
+        }),
+      },
+    ],
   },
 ]);

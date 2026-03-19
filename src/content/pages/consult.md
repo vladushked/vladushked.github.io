@@ -1,7 +1,6 @@
 ---
 route: /consulting
-title: 
-navLabel:  консультирование
+showInNav: false
 eyebrow: vladislavplotnikov.ru
 description: описание
 ---
