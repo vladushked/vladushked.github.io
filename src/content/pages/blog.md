@@ -10,7 +10,7 @@ description:
 ---
 
 ::hero
-name:ВЛАДОС НАКОДИЛ
+name: ВЛАДОС НАКОДИЛ
 photo: /images/blog.svg
 imageSize: medium
 fill: gray
