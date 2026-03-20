@@ -25,6 +25,7 @@ type CardFill = "none" | "gray" | "accent";
 type CardStroke = "none" | "gray" | "accent";
 type CardHeadingVariant = "page" | "card";
 type SkillGroupVariant = "solid" | "outline";
+type HeroImageSize = "small" | "medium" | "large";
 
 export type MenuIconKey = (typeof supportedMenuIcons)[number];
 
@@ -83,6 +84,7 @@ export type HeroBlock = CardPresentation &
     type: "hero";
     name: string;
     photo?: string;
+    imageSize: HeroImageSize;
     actions: HeroAction[];
     contacts: HeroContact[];
   };
@@ -237,6 +239,7 @@ function parsePostFeedDirective(lines: string[], slug: string): PageFeedBlock {
 function parseHeroDirective(lines: string[], slug: string): HeroBlock {
   let name = "";
   let photo = "";
+  let imageSize: HeroImageSize = "medium";
   let fill: CardFill = "none";
   let stroke: CardStroke = "gray";
   let headingVariant: CardHeadingVariant = "page";
@@ -271,6 +274,15 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
       }
 
       photo = safeHref;
+      continue;
+    }
+
+    if (field.key === "imageSize") {
+      if (!isHeroImageSize(field.value)) {
+        throw new Error(`Page "${slug}" hero has unsupported imageSize "${field.value}".`);
+      }
+
+      imageSize = field.value;
       continue;
     }
 
@@ -340,6 +352,7 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
     type: "hero",
     name,
     photo: normalizeOptionalField(photo),
+    imageSize,
     fill,
     stroke,
     headingVariant,
@@ -579,4 +592,8 @@ function isCardHeadingVariant(value: string): value is CardHeadingVariant {
 
 function isSkillGroupVariant(value: string): value is SkillGroupVariant {
   return ["solid", "outline"].includes(value);
+}
+
+function isHeroImageSize(value: string): value is HeroImageSize {
+  return ["small", "medium", "large"].includes(value);
 }

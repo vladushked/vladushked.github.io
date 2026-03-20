@@ -4,6 +4,7 @@ showInNav: true
 navLabel: /
 navIcon: file-text
 order: 0
+eyebrow: Vladislav Plotnikov
 ---
 
 ::hero

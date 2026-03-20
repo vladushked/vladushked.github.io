@@ -266,7 +266,7 @@ function HeroSection({ block }: { block: HeroBlock }) {
       </div>
 
       {block.photo ? (
-        <div className="hero-card-media">
+        <div className={`hero-card-media hero-card-media-size-${block.imageSize}`}>
           <img src={block.photo} alt={block.name} className="hero-card-image" />
         </div>
       ) : null}

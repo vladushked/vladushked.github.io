@@ -120,6 +120,28 @@ caption: Видео выступления
 - `::skill-group`
 - `::post-feed`
 
+### `::hero`
+
+Рендерит hero-карточку страницы.
+
+Пример:
+
+```md
+::hero
+name: Владислав Плотников
+photo: /images/face.jpg
+imageSize: medium
+title: Короткое описание
+::
+```
+
+Правила:
+
+- `name` обязателен
+- `photo` опционален
+- `imageSize` опционален: `small`, `medium`, `large`
+- если `imageSize` не указан, используется `medium`
+
 ### `::post-feed`
 
 Рендерит список карточек из `cards`.

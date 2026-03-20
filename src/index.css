@@ -1150,14 +1150,31 @@ button {
 
 .hero-card-media {
   order: -1;
-  width: min(100%, 20rem);
+  width: 100%;
   margin-inline: auto;
+  display: flex;
+  justify-content: center;
 }
 
 .hero-card-image {
   display: block;
-  width: 100%;
+  width: min(100%, var(--hero-image-size-mobile, 20rem));
   height: auto;
+}
+
+.hero-card-media-size-small {
+  --hero-image-size-mobile: 12rem;
+  --hero-image-size-desktop: 12rem;
+}
+
+.hero-card-media-size-medium {
+  --hero-image-size-mobile: 20rem;
+  --hero-image-size-desktop: 18rem;
+}
+
+.hero-card-media-size-large {
+  --hero-image-size-mobile: 24rem;
+  --hero-image-size-desktop: 20rem;
 }
 
 .hero-contact-list {
@@ -1733,7 +1750,7 @@ button {
 
   .hero-card-with-photo {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) clamp(12rem, 28vw, 18rem);
+    grid-template-columns: minmax(0, 1fr) clamp(12rem, 28vw, 20rem);
     align-items: flex-start;
     gap: 2rem;
   }
@@ -1753,6 +1770,11 @@ button {
     order: 0;
     width: 100%;
     margin-inline: 0;
+    justify-content: flex-end;
+  }
+
+  .hero-card-image {
+    width: min(100%, var(--hero-image-size-desktop, 18rem));
   }
 
   .type-section-title {
