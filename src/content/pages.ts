@@ -26,6 +26,7 @@ type CardStroke = "none" | "gray" | "accent";
 type CardHeadingVariant = "page" | "card";
 type SkillGroupVariant = "solid" | "outline";
 type HeroImageSize = "small" | "medium" | "large";
+type HeroPhotoLayout = "side" | "banner";
 
 export type MenuIconKey = (typeof supportedMenuIcons)[number];
 
@@ -85,6 +86,7 @@ export type HeroBlock = CardPresentation &
     name: string;
     photo?: string;
     imageSize: HeroImageSize;
+    photoLayout: HeroPhotoLayout;
     actions: HeroAction[];
     contacts: HeroContact[];
   };
@@ -240,6 +242,7 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
   let name = "";
   let photo = "";
   let imageSize: HeroImageSize = "medium";
+  let photoLayout: HeroPhotoLayout = "side";
   let fill: CardFill = "none";
   let stroke: CardStroke = "gray";
   let headingVariant: CardHeadingVariant = "page";
@@ -283,6 +286,15 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
       }
 
       imageSize = field.value;
+      continue;
+    }
+
+    if (field.key === "photoLayout") {
+      if (!isHeroPhotoLayout(field.value)) {
+        throw new Error(`Page "${slug}" hero has unsupported photoLayout "${field.value}".`);
+      }
+
+      photoLayout = field.value;
       continue;
     }
 
@@ -353,6 +365,7 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
     name,
     photo: normalizeOptionalField(photo),
     imageSize,
+    photoLayout,
     fill,
     stroke,
     headingVariant,
@@ -596,4 +609,8 @@ function isSkillGroupVariant(value: string): value is SkillGroupVariant {
 
 function isHeroImageSize(value: string): value is HeroImageSize {
   return ["small", "medium", "large"].includes(value);
+}
+
+function isHeroPhotoLayout(value: string): value is HeroPhotoLayout {
+  return ["side", "banner"].includes(value);
 }

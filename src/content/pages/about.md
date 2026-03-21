@@ -15,9 +15,9 @@ stroke: none
 headingVariant: page
 title: Тимлид / разработчик ПО для робототехники
 meta: Стаж: более 8 лет
+action: Написать в Telegram|https://t.me/vladislavplotnikov|primary
 contact: phone|+7 (963) 922-34-64|tel:+79639223464
 contact: email|vladislav.a.plotnikov@yandex.ru|mailto:vladislav.a.plotnikov@yandex.ru
-contact: telegram|@vladislavplotnikov|https://t.me/vladislavplotnikov
 ::
 
 ## О себе

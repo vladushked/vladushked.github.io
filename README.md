@@ -131,6 +131,7 @@ caption: Видео выступления
 name: Владислав Плотников
 photo: /images/face.jpg
 imageSize: medium
+photoLayout: side
 title: Короткое описание
 ::
 ```
@@ -141,6 +142,8 @@ title: Короткое описание
 - `photo` опционален
 - `imageSize` опционален: `small`, `medium`, `large`
 - если `imageSize` не указан, используется `medium`
+- `photoLayout` опционален: `side`, `banner`
+- если `photoLayout` не указан, используется `side`
 
 ### `::post-feed`
 

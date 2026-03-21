@@ -229,9 +229,15 @@ function HeroSection({ block }: { block: HeroBlock }) {
   return (
     <section
       className={`card card-fill-${block.fill} card-stroke-${block.stroke} card-heading-${block.headingVariant} ${
-        block.photo ? "hero-card hero-card-with-photo" : "hero-card"
+        block.photo ? `hero-card hero-card-with-photo hero-card-photo-layout-${block.photoLayout}` : "hero-card"
       }`}
     >
+      {block.photo && block.photoLayout === "banner" ? (
+        <div className={`hero-card-media hero-card-media-size-${block.imageSize} hero-card-media-banner`}>
+          <img src={block.photo} alt={block.name} className="hero-card-image" />
+        </div>
+      ) : null}
+
       <div className="card-stack hero-card-content">
         <div className="card-stack-tight">
           <h1 className="card-heading card-heading-page">{block.name}</h1>
@@ -265,7 +271,7 @@ function HeroSection({ block }: { block: HeroBlock }) {
         {footer}
       </div>
 
-      {block.photo ? (
+      {block.photo && block.photoLayout !== "banner" ? (
         <div className={`hero-card-media hero-card-media-size-${block.imageSize}`}>
           <img src={block.photo} alt={block.name} className="hero-card-image" />
         </div>

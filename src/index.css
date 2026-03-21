@@ -1162,9 +1162,26 @@ button {
   height: auto;
 }
 
+.hero-card-media-banner {
+  display: block;
+  width: 100%;
+  overflow: hidden;
+  aspect-ratio: var(--hero-banner-aspect-ratio, 16 / 7);
+}
+
+.hero-card-media-banner .hero-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .hero-card-media-size-small {
   --hero-image-size-mobile: 12rem;
   --hero-image-size-desktop: 12rem;
+}
+
+.hero-card-media-size-small.hero-card-media-banner {
+  --hero-banner-aspect-ratio: 16 / 6.5;
 }
 
 .hero-card-media-size-medium {
@@ -1172,9 +1189,17 @@ button {
   --hero-image-size-desktop: 18rem;
 }
 
+.hero-card-media-size-medium.hero-card-media-banner {
+  --hero-banner-aspect-ratio: 16 / 5.75;
+}
+
 .hero-card-media-size-large {
   --hero-image-size-mobile: 24rem;
   --hero-image-size-desktop: 20rem;
+}
+
+.hero-card-media-size-large.hero-card-media-banner {
+  --hero-banner-aspect-ratio: 16 / 5;
 }
 
 .hero-contact-list {
@@ -1755,8 +1780,17 @@ button {
     gap: 2rem;
   }
 
+  .hero-card-photo-layout-banner.hero-card-with-photo {
+    display: flex;
+    flex-direction: column;
+  }
+
   .hero-card-with-photo .hero-card-content {
     grid-column: 1;
+  }
+
+  .hero-card-photo-layout-banner.hero-card-with-photo .hero-card-content {
+    grid-column: auto;
   }
 
   .hero-contact-list {
@@ -1773,8 +1807,18 @@ button {
     justify-content: flex-end;
   }
 
+  .hero-card-photo-layout-banner .hero-card-media {
+    display: block;
+    grid-column: auto;
+    order: 0;
+  }
+
   .hero-card-image {
     width: min(100%, var(--hero-image-size-desktop, 18rem));
+  }
+
+  .hero-card-photo-layout-banner .hero-card-image {
+    width: 100%;
   }
 
   .type-section-title {

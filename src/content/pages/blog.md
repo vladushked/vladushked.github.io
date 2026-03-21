@@ -13,6 +13,7 @@ description:
 name: ВЛАДОС НАКОДИЛ
 photo: /images/blog.svg
 imageSize: small
+photoLayout: banner
 fill: gray
 stroke: none
 headingVariant: page
