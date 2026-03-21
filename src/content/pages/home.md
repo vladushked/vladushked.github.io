@@ -23,16 +23,17 @@ contact: email|vladislav.a.plotnikov@yandex.ru|mailto:vladislav.a.plotnikov@yand
 
 ::skill-group
 title: Ключевая экспертиза
-variant: solid
+variant: outline
 skill: ROS2
+skill: Робототехника
 skill: Python
 skill: С++
 skill: Компьютерное зрение
 skill: Архитектура ПО
 skill: Контейнеризация
-skill: Наблюдаемость
 skill: Управление командой
 skill: Код-ревью
+skill: Оборудование
 ::
 
 ## Когда я буду полезен
