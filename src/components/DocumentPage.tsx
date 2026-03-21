@@ -59,7 +59,9 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
         title={document.post.meta.title}
         contentClassName="markdown-content"
       >
-        {document.post.blocks.map((block, index) => renderPostBlock(block, index, document.post.meta.title))}
+        {document.post.blocks.map((block, index) =>
+          renderPostBlock(block, index, document.post.meta.title, document.post.previewMediaThumbnail),
+        )}
       </PageFrame>
     );
   }
@@ -130,9 +132,9 @@ function renderPageBlock(block: PageBlock, index: number) {
   return renderTextBlock(block, index, "page");
 }
 
-function renderPostBlock(block: PostBlock, index: number, title: string) {
+function renderPostBlock(block: PostBlock, index: number, title: string, thumbnailUrl?: string) {
   if (block.type === "media") {
-    return <PostMediaSection key={`post-block-${index}`} block={block} title={title} />;
+    return <PostMediaSection key={`post-block-${index}`} block={block} title={title} thumbnailUrl={thumbnailUrl} />;
   }
 
   return renderTextBlock(block, index, "post");
@@ -438,11 +440,40 @@ function PostFeedSection({ feed }: { feed: string }) {
   );
 }
 
-function PostMediaSection({ block, title }: { block: PostMediaBlock; title: string }) {
+function PostMediaSection({
+  block,
+  title,
+  thumbnailUrl,
+}: {
+  block: PostMediaBlock;
+  title: string;
+  thumbnailUrl?: string;
+}) {
   if (block.kind === "image") {
     return (
       <figure className="post-detail-media">
         <img src={block.src} alt={block.alt ?? title} className="post-detail-image" />
+        {block.caption ? <figcaption className="post-media-caption">{block.caption}</figcaption> : null}
+      </figure>
+    );
+  }
+
+  if (thumbnailUrl) {
+    return (
+      <figure className="post-detail-media">
+        <a
+          href={block.src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="post-detail-video-preview"
+          aria-label={`Открыть видео "${title}"`}
+        >
+          <img src={thumbnailUrl} alt={block.alt ?? title} className="post-detail-video-image" />
+          <span className="post-detail-video-overlay" aria-hidden="true">
+            <PlayCircle size={40} strokeWidth={1.7} />
+            <span className="post-detail-media-label">Видео</span>
+          </span>
+        </a>
         {block.caption ? <figcaption className="post-media-caption">{block.caption}</figcaption> : null}
       </figure>
     );

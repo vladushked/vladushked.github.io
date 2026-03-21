@@ -1506,6 +1506,40 @@ button {
   border: 1px solid var(--color-border);
 }
 
+.post-detail-video-preview {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  aspect-ratio: 16 / 9;
+}
+
+.post-detail-video-preview:focus-visible {
+  outline: 2px solid var(--color-accent-ink);
+  outline-offset: 2px;
+}
+
+.post-detail-video-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.post-detail-video-overlay {
+  position: absolute;
+  inset: auto 1rem 1rem 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .65rem .85rem;
+  background: rgba(10, 10, 10, .72);
+  color: #fafafa;
+}
+
 .post-detail-video {
   padding: 1.25rem;
   border: 1px solid var(--color-border);

@@ -28,6 +28,7 @@ export type PostMediaBlock = {
   type: "media";
   kind: "image" | "video";
   src: string;
+  preview?: string;
   alt?: string;
   caption?: string;
 };
@@ -138,6 +139,7 @@ function buildDirectiveBlock(name: string, bodyLines: string[], slug: string): P
 function parseMediaDirective(lines: string[], slug: string): PostMediaBlock {
   let kind = "";
   let src = "";
+  let preview = "";
   let alt = "";
   let caption = "";
 
@@ -166,6 +168,17 @@ function parseMediaDirective(lines: string[], slug: string): PostMediaBlock {
       continue;
     }
 
+    if (field.key === "preview") {
+      const safeHref = sanitizeHref(field.value);
+
+      if (!safeHref) {
+        throw new Error(`Post "${slug}" media has unsupported preview "${field.value}".`);
+      }
+
+      preview = safeHref;
+      continue;
+    }
+
     if (field.key === "alt") {
       alt = field.value;
       continue;
@@ -183,10 +196,15 @@ function parseMediaDirective(lines: string[], slug: string): PostMediaBlock {
     throw new Error(`Post "${slug}" "::media" requires valid "kind" and "src".`);
   }
 
+  if (preview && kind !== "video") {
+    throw new Error(`Post "${slug}" "::media" field "preview" is only supported for videos.`);
+  }
+
   return {
     type: "media",
     kind,
     src,
+    preview: normalizeOptionalField(preview),
     alt: normalizeOptionalField(alt),
     caption: normalizeOptionalField(caption),
   };
@@ -203,11 +221,15 @@ function getPreviewMediaThumbnail(slug: string, blocks: PostBlock[]) {
     return undefined;
   }
 
+  if (previewMedia.kind === "video") {
+    return previewMedia.preview ?? postVideoThumbnails[slug] ?? undefined;
+  }
+
   if (previewMedia.kind === "image") {
     return previewMedia.src;
   }
 
-  return postVideoThumbnails[slug] ?? undefined;
+  return undefined;
 }
 
 function comparePostsByDateDesc(left: PostDefinition, right: PostDefinition) {

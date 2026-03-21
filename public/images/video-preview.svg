@@ -1,0 +1,14 @@
+<svg width="1200" height="675" viewBox="0 0 1200 675" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="1200" height="675" fill="#2F2A23"/>
+<rect x="48" y="48" width="1104" height="579" rx="28" fill="#3A332B" stroke="#5C5246" stroke-width="2"/>
+<circle cx="262" cy="202" r="140" fill="#4A4036"/>
+<circle cx="262" cy="202" r="92" fill="#5C5246"/>
+<path d="M223 154L349 202L223 250V154Z" fill="#F2EBDF"/>
+<path d="M578 177H965" stroke="#8E7C67" stroke-width="8" stroke-linecap="round"/>
+<path d="M578 229H900" stroke="#8E7C67" stroke-width="8" stroke-linecap="round"/>
+<path d="M578 281H836" stroke="#8E7C67" stroke-width="8" stroke-linecap="round"/>
+<rect x="578" y="356" width="214" height="58" rx="29" fill="#F2EBDF"/>
+<text x="685" y="394" fill="#2F2A23" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" text-anchor="middle" letter-spacing="2">VIDEO</text>
+<text x="578" y="490" fill="#F2EBDF" font-family="Arial, Helvetica, sans-serif" font-size="44" font-weight="700">Preview</text>
+<text x="578" y="542" fill="#C7B59D" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="400">Click to open the source video</text>
+</svg>
