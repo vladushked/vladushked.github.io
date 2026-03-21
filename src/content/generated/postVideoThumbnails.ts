@@ -4,4 +4,9 @@ export const postVideoThumbnails: Record<string, string | null> = {
   "ros-meetup-2023": null,
   "ros-meetup-2024": null,
   "ros-meetup-2025": null,
+  "russian-chinese-underwater-robotics-2019": null,
+  "sauvc-2019": null,
+  "sauvc-2022": null,
+  "sauvc-2024": null,
+  "sauvc-2025": null,
 };

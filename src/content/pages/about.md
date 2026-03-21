@@ -113,7 +113,7 @@ fill: none
 stroke: gray
 headingVariant: card
 subtitle: Аспирантура
-period: 2024
+period: 2020 - 2024
 meta: СМ-7 Мехатроника и робототехника
 ::
 
@@ -124,7 +124,7 @@ fill: none
 stroke: gray
 headingVariant: card
 subtitle: Магистр
-period: 2020
+period: 2018 - 2020
 meta: СМ-11 Подводная робототехника
 ::
 
@@ -135,7 +135,7 @@ fill: none
 stroke: gray
 headingVariant: card
 subtitle: Бакалавр
-period: 2018
+period: 2014 - 2018
 meta: СМ-11 Подводная робототехника
 ::
 
