@@ -12,11 +12,11 @@ description:
 ::hero
 name: ВЛАДОС НАКОДИЛ
 photo: /images/blog.svg
-imageSize: medium
+imageSize: small
 fill: gray
 stroke: none
 headingVariant: page
-title: Блог про личный опыт в разработке софта, робототехнике, ИИ и инновациях
+title: Блог о личном опыте в разработке софта, робототехнике, ИИ и инновациях
 meta: 
 action: Перейти в канал|https://t.me/vladosnakodil|primary
 ::
