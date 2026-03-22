@@ -7,7 +7,7 @@ tags: ROS Meetup, 2023, выступление
 ::media
 kind: video
 src: https://vk.com/video-103950236_456239129
-preview: /images/video-preview.svg
+preview: /images/ros-meetup-2023.jpg
 caption: Видео выступления
 ::
 

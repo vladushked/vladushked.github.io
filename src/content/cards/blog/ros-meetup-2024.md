@@ -8,7 +8,7 @@ tags: ROS Meetup, 2024, выступление
 ::media
 kind: video
 src: https://vk.com/video-103950236_456239136
-preview: /images/video-preview.svg
+preview: /images/ros-meetup-2024.jpg
 caption: Видео выступления
 ::
 
