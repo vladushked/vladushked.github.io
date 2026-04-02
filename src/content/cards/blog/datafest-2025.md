@@ -8,7 +8,7 @@ tags: Datafest, 2025, выступление
 ::media
 kind: video
 src: https://vk.com/video-164555658_456241521?sh=4
-preview: /images/video-preview.svg
+preview: /images/data-fest-2025.jpg
 caption: Видео выступления
 ::
 

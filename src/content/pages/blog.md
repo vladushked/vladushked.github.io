@@ -5,7 +5,7 @@ navLabel: /blog
 navIcon: book-open
 order: 2
 title: 
-eyebrow: Vladislav Plotnikov
+eyebrow: 
 description: 
 ---
 

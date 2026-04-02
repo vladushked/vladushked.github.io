@@ -1,10 +1,10 @@
 ---
-route: /about
+route: /
 showInNav: true
 navLabel: /about
 navIcon: user
-order: 1
-eyebrow: Vladislav Plotnikov
+order: 0
+eyebrow: 
 ---
 
 ::hero

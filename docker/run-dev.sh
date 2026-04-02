@@ -5,7 +5,7 @@ IMAGE_NAME="vladushked-site-dev"
 CONTAINER_NAME="vladushked-site-dev"
 NODE_MODULES_VOLUME="vladushked-site-node_modules"
 
-docker build -t "$IMAGE_NAME" -f docker/Dockerfile .
+# docker build -t "$IMAGE_NAME" -f docker/Dockerfile .
 
 if docker ps -a --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
   docker rm -f "$CONTAINER_NAME" >/dev/null

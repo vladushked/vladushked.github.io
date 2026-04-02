@@ -1,7 +1,7 @@
 ---
 route: /404
 title: 404
-eyebrow: Vladislav Plotnikov
+eyebrow: 
 description: Страница не найдена. Возможно, ссылка устарела или маршрут был изменен.
 showInNav: false
 ---

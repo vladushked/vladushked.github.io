@@ -1,10 +1,10 @@
 ---
-route: /
+route: /consult
 showInNav: true
-navLabel: /home
+navLabel: /consult
 navIcon: file-text
-order: 0
-eyebrow: Vladislav Plotnikov
+order: 1
+eyebrow: 
 ---
 
 ::hero
