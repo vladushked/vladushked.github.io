@@ -1,21 +1,16 @@
-import { ReactNode, useEffect } from 'react';
-
-function applyTheme(matchesDark: boolean) {
-  document.documentElement.setAttribute('data-theme', matchesDark ? 'dark' : 'light');
-}
-
+import { useEffect, type ReactNode } from "react";
+import { UIProvider } from "./ui/primitives";
 export function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    applyTheme(mediaQuery.matches);
-
-    const handleChange = (e: MediaQueryListEvent) => {
-      applyTheme(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    const query = matchMedia("(prefers-color-scheme: dark)");
+    const apply = () =>
+      document.documentElement.setAttribute(
+        "data-theme",
+        query.matches ? "dark" : "light",
+      );
+    apply();
+    query.addEventListener("change", apply);
+    return () => query.removeEventListener("change", apply);
   }, []);
-
-  return <>{children}</>;
+  return <UIProvider theme="system">{children}</UIProvider>;
 }

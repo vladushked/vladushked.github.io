@@ -1,0 +1,146 @@
+.gg-native {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+  height: 780px;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #383838;
+  border-radius: 10px;
+  background: #1c1c1c;
+  color: #dadada;
+  text-align: left;
+  color-scheme: dark;
+}
+.gg-native-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  height: 44px;
+  box-sizing: border-box;
+  padding: 4px 10px 4px 13px;
+  border-bottom: 1px solid #333;
+  background: #242424;
+  color: #b3b3b3;
+  font: 11px/1.4 var(--ps-font, system-ui);
+}
+.gg-native-toolbar button {
+  flex: none;
+  border: 0;
+  border-radius: 4px;
+  min-height: 36px;
+  padding: 4px 8px;
+  background: transparent;
+  color: #dadada;
+  font: inherit;
+  cursor: pointer;
+}
+.gg-native-toolbar button:hover {
+  background: #333;
+}
+.gg-native-frame {
+  display: block;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  background: #1c1c1c;
+}
+.gg-native-poster {
+  display: block;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  object-fit: cover;
+  object-position: center;
+}
+.gg-native.is-closed .gg-native-frame {
+  pointer-events: none;
+}
+.gg-native-cover {
+  position: absolute;
+  inset: 44px 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px;
+  text-align: center;
+  background: #101510ad;
+  backdrop-filter: blur(2px);
+  color: #dadada;
+  font: 12px/1.6 var(--ps-font, system-ui);
+}
+.gg-native-open {
+  min-height: 48px;
+  border: 1px solid #b8e89d80;
+  border-radius: 10px;
+  padding: 12px 22px;
+  background: #b8e89d;
+  color: #17251b;
+  font: 500 14px/1.5 var(--ps-font, system-ui);
+  cursor: pointer;
+}
+.gg-native-open:hover {
+  background: #cbf4b4;
+}
+.gg-native-open:focus-visible {
+  outline: 2px solid #dadada;
+  outline-offset: 5px;
+}
+.gg-native-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.gg-native-actions button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+}
+.gg-native-toolbar .gg-native-exit {
+  padding-inline: 0;
+  background: none;
+}
+.gg-native-toolbar .gg-native-exit:hover {
+  background: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.gg-native-toolbar button:focus-visible {
+  outline: 2px solid #b8e89d;
+  outline-offset: 1px;
+}
+.gg-native-toolbar button:disabled {
+  visibility: hidden;
+}
+.gg-native-loading {
+  position: absolute;
+  inset: 44px 0 0;
+  display: grid;
+  align-content: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  background: #1c1c1c;
+  color: #b3b3b3;
+  font: 13px/1.5 var(--ps-font, system-ui);
+}
+@media (max-width: 600px) {
+  .gg-native {
+    height: min(800px, calc(100dvh - 32px));
+    min-height: 600px;
+  }
+  .gg-native-toolbar {
+    font-size: 10px;
+    padding-inline: 8px;
+  }
+  .gg-native-toolbar button {
+    min-height: 36px;
+  }
+}

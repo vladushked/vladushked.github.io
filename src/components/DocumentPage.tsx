@@ -1,13 +1,35 @@
-import { Fragment, useState } from "react";
+import { Fragment, lazy, Suspense } from "react";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
-import { ArrowLeft, ArrowRight, Mail, Phone, PlayCircle, Send } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Mail,
+  Phone,
+  PlayCircle,
+  Send,
+} from "lucide-react";
 import type { SiteDocument } from "../content/documents";
 import { posts } from "../content/documents";
-import type { CardBlock, HeroBlock, PageBlock, SkillGroupBlock } from "../content/pages";
+import type {
+  CardBlock,
+  HeroBlock,
+  PageBlock,
+  SkillGroupBlock,
+} from "../content/pages";
 import type { PostBlock, PostMediaBlock } from "../content/posts";
 import { sanitizeHref, type TextBlock } from "../content/sharedMarkdown";
-import { PostPreviewCard } from "./PostPreviewCard";
+import { ContentList } from "./ui/primitives";
+import { TopicFilter } from "./ui/TopicFilter";
+import { CodeBlock } from "./ui/primitives";
+import { useArchiveTopics } from "./ArchiveState";
+import {
+  matchesTopics,
+  postListItem,
+  projectItems,
+  topicOptions,
+} from "../content/site";
+const NativeDemo = lazy(() => import("./ui/ObsidianGraphDemo"));
 
 type HeroContactType = "phone" | "email" | "telegram";
 
@@ -26,93 +48,115 @@ type BaseCardProps = {
   footer?: ReactNode;
 };
 
-const inlineTokenPattern = /(\[[^\]]+\]\([^)]+\)|\*\*.+?\*\*|`[^`]+`|\*[^*]+\*)/g;
+const inlineTokenPattern =
+  /(\[[^\]]+\]\([^)]+\)|\*\*.+?\*\*|`[^`]+`|\*[^*]+\*)/g;
 
 export function DocumentPage({ document }: { document: SiteDocument }) {
   if (document.kind === "page") {
-    return (
-      <PageFrame
-        eyebrow={document.page.meta.eyebrow ? <Link to="/" className="type-eyebrow inline-block">{document.page.meta.eyebrow}</Link> : undefined}
-        title={document.page.meta.title}
-        description={document.page.meta.description}
-        contentClassName="markdown-content"
-      >
-        {document.page.blocks.map((block, index) => renderPageBlock(block, index))}
-      </PageFrame>
+    const isBlog = document.page.blocks.some(
+      (block) => block.type === "post-feed",
     );
-  }
-
-  if (document.kind === "post") {
+    const hasHero = document.page.blocks.some((block) => block.type === "hero");
     return (
       <PageFrame
-        backLink={{ to: document.post.feedRoute, label: "Назад" }}
-        headerSupplement={
-          <div className="chip-list">
-            {document.post.meta.tags.map((tag) => (
-              <span key={tag} className="chip chip-static chip-outline">
-                {tag}
-              </span>
-            ))}
-          </div>
+        title={isBlog ? "blog" : hasHero ? undefined : document.page.meta.title}
+        description={
+          hasHero || isBlog ? undefined : document.page.meta.description
         }
-        eyebrow={<p className="type-eyebrow">{document.post.meta.date}</p>}
-        title={document.post.meta.title}
-        contentClassName="markdown-content"
       >
-        {document.post.blocks.map((block, index) =>
-          renderPostBlock(block, index, document.post.meta.title, document.post.previewMediaThumbnail),
-        )}
+        {(isBlog
+          ? document.page.blocks.filter((block) => block.type === "post-feed")
+          : document.page.blocks
+        ).map((block, index) => renderPageBlock(block, index))}
       </PageFrame>
     );
   }
-
-  throw new Error(`Unsupported document kind "${document satisfies never}".`);
+  return (
+    <PageFrame
+      title={document.post.meta.title}
+      backLink={{ to: document.post.feedRoute, label: "Все публикации" }}
+      headerSupplement={
+        <div className="post-meta">
+          <time dateTime={document.post.meta.date}>
+            {new Intl.DateTimeFormat("ru-RU").format(
+              new Date(document.post.meta.date + "T00:00:00Z"),
+            )}
+          </time>
+          <span>{document.post.meta.tags.join(" · ")}</span>
+        </div>
+      }
+    >
+      {document.post.blocks.map((block, index) =>
+        renderPostBlock(
+          block,
+          index,
+          document.post.meta.title,
+          document.post.previewMediaThumbnail,
+        ),
+      )}
+    </PageFrame>
+  );
 }
-
 function PageFrame({
-  eyebrow,
   title,
   description,
   backLink,
   headerSupplement,
-  contentClassName,
   children,
 }: {
-  eyebrow?: ReactNode;
   title?: ReactNode;
   description?: ReactNode;
   backLink?: { to: string; label: string };
   headerSupplement?: ReactNode;
-  contentClassName?: string;
   children: ReactNode;
 }) {
-  const hasPageHeader = Boolean(backLink || eyebrow || title || description || headerSupplement);
-
   return (
-    <div className="page-shell min-h-screen">
-      <article className="mx-auto max-w-4xl">
-        {hasPageHeader ? (
-          <header className="markdown-page-header page-header-stack border-b border-[var(--color-border)] pb-8">
-            {backLink ? (
-              <Link to={backLink.to} className="post-back-link">
-                <ArrowLeft size={16} strokeWidth={1.9} />
-                {backLink.label}
-              </Link>
-            ) : null}
-            {headerSupplement}
-            {eyebrow}
-            {title ? <h1 className="type-page-title">{title}</h1> : null}
-            {description ? <p className="type-body-lead ui-text-muted max-w-3xl">{description}</p> : null}
-          </header>
-        ) : null}
-
-        <div className={contentClassName ?? "markdown-content"}>{children}</div>
+    <div className="site-preview">
+      <article className="ps-article">
+        <nav className="page-back-links" aria-label="Возврат">
+          <Link to="/" className="site-back ps-link ps-link--muted">
+            ← На главную
+          </Link>
+          {backLink && (
+            <Link to={backLink.to} className="site-back ps-link ps-link--muted">
+              {backLink.label}
+            </Link>
+          )}
+        </nav>
+        {title && <h1>{title}</h1>}
+        {description && <p className="document-description">{description}</p>}
+        {headerSupplement}
+        <div className="markdown-content">{children}</div>
       </article>
     </div>
   );
 }
 
 function renderPageBlock(block: PageBlock, index: number) {
+  if (block.type === "media")
+    return (
+      <PostMediaSection
+        key={`page-media-${index}`}
+        block={block}
+        title={block.alt || "Медиа проекта"}
+      />
+    );
+  if (block.type === "project-feed")
+    return <ProjectFeedSection key={`project-feed-${index}`} />;
+  if (block.type === "native-demo")
+    return (
+      <figure key={`native-${index}`} className="native-project-media">
+        <Suspense
+          fallback={
+            <p role="status" className="native-project-loading">
+              Загрузка интерактивного демо…
+            </p>
+          }
+        >
+          <NativeDemo poster={block.poster} />
+        </Suspense>
+      </figure>
+    );
   if (block.type === "hero") {
     return <HeroSection key={`page-block-${index}`} block={block} />;
   }
@@ -132,19 +176,43 @@ function renderPageBlock(block: PageBlock, index: number) {
   return renderTextBlock(block, index, "page");
 }
 
-function renderPostBlock(block: PostBlock, index: number, title: string, thumbnailUrl?: string) {
+function renderPostBlock(
+  block: PostBlock,
+  index: number,
+  title: string,
+  thumbnailUrl?: string,
+) {
   if (block.type === "media") {
-    return <PostMediaSection key={`post-block-${index}`} block={block} title={title} thumbnailUrl={thumbnailUrl} />;
+    return (
+      <PostMediaSection
+        key={`post-block-${index}`}
+        block={block}
+        title={title}
+        thumbnailUrl={thumbnailUrl}
+      />
+    );
   }
 
   return renderTextBlock(block, index, "post");
 }
 
 function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
+  if (block.type === "code")
+    return (
+      <CodeBlock
+        key={`${keyPrefix}-code-${index}`}
+        code={block.code}
+        language={block.language}
+        label={block.language || "Код"}
+      />
+    );
   if (block.type === "heading") {
     if (block.level === 2) {
       return (
-        <h2 key={`${keyPrefix}-block-${index}`} className="type-section-title markdown-section-title">
+        <h2
+          key={`${keyPrefix}-block-${index}`}
+          className="type-section-title markdown-section-title"
+        >
           {block.text}
         </h2>
       );
@@ -159,7 +227,10 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
 
   if (block.type === "paragraph") {
     return (
-      <p key={`${keyPrefix}-block-${index}`} className="type-body markdown-paragraph">
+      <p
+        key={`${keyPrefix}-block-${index}`}
+        className="type-body markdown-paragraph"
+      >
         {renderInline(block.text, `${keyPrefix}-paragraph-${index}`)}
       </p>
     );
@@ -169,9 +240,17 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
     return (
       <ul key={`${keyPrefix}-block-${index}`} className="markdown-list">
         {block.items.map((item, itemIndex) => (
-          <li key={`${keyPrefix}-item-${index}-${itemIndex}`} className="markdown-list-item">
+          <li
+            key={`${keyPrefix}-item-${index}-${itemIndex}`}
+            className="markdown-list-item"
+          >
             <span className="accent-ink markdown-list-marker">•</span>
-            <span>{renderInline(item, `${keyPrefix}-unordered-${index}-${itemIndex}`)}</span>
+            <span>
+              {renderInline(
+                item,
+                `${keyPrefix}-unordered-${index}-${itemIndex}`,
+              )}
+            </span>
           </li>
         ))}
       </ul>
@@ -182,9 +261,16 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
     return (
       <ol key={`${keyPrefix}-block-${index}`} className="markdown-list">
         {block.items.map((item, itemIndex) => (
-          <li key={`${keyPrefix}-item-${index}-${itemIndex}`} className="markdown-list-item">
-            <span className="accent-ink markdown-list-marker">{itemIndex + 1}.</span>
-            <span>{renderInline(item, `${keyPrefix}-ordered-${index}-${itemIndex}`)}</span>
+          <li
+            key={`${keyPrefix}-item-${index}-${itemIndex}`}
+            className="markdown-list-item"
+          >
+            <span className="accent-ink markdown-list-marker">
+              {itemIndex + 1}.
+            </span>
+            <span>
+              {renderInline(item, `${keyPrefix}-ordered-${index}-${itemIndex}`)}
+            </span>
           </li>
         ))}
       </ol>
@@ -201,7 +287,9 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
 function HeroSection({ block }: { block: HeroBlock }) {
   const actions = block.actions.length ? (
     <div className="hero-action-list">
-      {block.actions.map((action, index) => renderHeroAction(action, `${action.href}-${index}`))}
+      {block.actions.map((action, index) =>
+        renderHeroAction(action, `${action.href}-${index}`),
+      )}
     </div>
   ) : null;
 
@@ -231,11 +319,15 @@ function HeroSection({ block }: { block: HeroBlock }) {
   return (
     <section
       className={`card card-fill-${block.fill} card-stroke-${block.stroke} card-heading-${block.headingVariant} ${
-        block.photo ? `hero-card hero-card-with-photo hero-card-photo-layout-${block.photoLayout}` : "hero-card"
+        block.photo
+          ? `hero-card hero-card-with-photo hero-card-photo-layout-${block.photoLayout}`
+          : "hero-card"
       }`}
     >
       {block.photo && block.photoLayout === "banner" ? (
-        <div className={`hero-card-media hero-card-media-size-${block.imageSize} hero-card-media-banner`}>
+        <div
+          className={`hero-card-media hero-card-media-size-${block.imageSize} hero-card-media-banner`}
+        >
           <img src={block.photo} alt={block.name} className="hero-card-image" />
         </div>
       ) : null}
@@ -243,12 +335,19 @@ function HeroSection({ block }: { block: HeroBlock }) {
       <div className="card-stack hero-card-content">
         <div className="card-stack-tight">
           <h1 className="card-heading card-heading-page">{block.name}</h1>
-          {block.title ? <p className="card-title">{renderInline(block.title, `${block.name}-title`)}</p> : null}
+          {block.title ? (
+            <p className="card-title">
+              {renderInline(block.title, `${block.name}-title`)}
+            </p>
+          ) : null}
 
           {block.subtitleLines.length ? (
             <div className="card-subtitle-lines">
               {block.subtitleLines.map((line, index) => (
-                <div key={`${line.text}-${index}`} className="card-subtitle-line">
+                <div
+                  key={`${line.text}-${index}`}
+                  className="card-subtitle-line"
+                >
                   <span className="card-subtitle">{line.text}</span>
                   <span className="card-period">{line.period}</span>
                 </div>
@@ -256,17 +355,29 @@ function HeroSection({ block }: { block: HeroBlock }) {
             </div>
           ) : block.subtitle || block.period ? (
             <p className="card-subtitle-row">
-              {block.subtitle ? <span className="card-subtitle">{block.subtitle}</span> : null}
-              {block.subtitle && block.period ? <span className="card-separator">·</span> : null}
-              {block.period ? <span className="card-period">{block.period}</span> : null}
+              {block.subtitle ? (
+                <span className="card-subtitle">{block.subtitle}</span>
+              ) : null}
+              {block.subtitle && block.period ? (
+                <span className="card-separator">·</span>
+              ) : null}
+              {block.period ? (
+                <span className="card-period">{block.period}</span>
+              ) : null}
             </p>
           ) : null}
 
-          {block.meta ? <p className="card-meta">{renderInline(block.meta, `${block.name}-meta`)}</p> : null}
+          {block.meta ? (
+            <p className="card-meta">
+              {renderInline(block.meta, `${block.name}-meta`)}
+            </p>
+          ) : null}
         </div>
 
         {block.summary ? (
-          <p className="type-body card-summary">{renderInline(block.summary, `${block.name}-summary`)}</p>
+          <p className="type-body card-summary">
+            {renderInline(block.summary, `${block.name}-summary`)}
+          </p>
         ) : null}
 
         {actions}
@@ -274,7 +385,9 @@ function HeroSection({ block }: { block: HeroBlock }) {
       </div>
 
       {block.photo && block.photoLayout !== "banner" ? (
-        <div className={`hero-card-media hero-card-media-size-${block.imageSize}`}>
+        <div
+          className={`hero-card-media hero-card-media-size-${block.imageSize}`}
+        >
           <img src={block.photo} alt={block.name} className="hero-card-image" />
         </div>
       ) : null}
@@ -288,7 +401,9 @@ function CardSection({ block }: { block: CardBlock }) {
       fill={block.fill}
       stroke={block.stroke}
       headingVariant={block.headingVariant}
-      heading={<h3 className="card-heading card-heading-card">{block.title}</h3>}
+      heading={
+        <h3 className="card-heading card-heading-card">{block.title}</h3>
+      }
       subtitle={block.subtitle}
       period={block.period}
       meta={block.meta}
@@ -314,16 +429,25 @@ function BaseCard({
   footer,
 }: BaseCardProps) {
   return (
-    <section className={`card card-fill-${fill} card-stroke-${stroke} card-heading-${headingVariant}`}>
+    <section
+      className={`card card-fill-${fill} card-stroke-${stroke} card-heading-${headingVariant}`}
+    >
       <div className="card-stack">
         <div className="card-stack-tight">
           {heading}
-          {title ? <p className="card-title">{renderInline(title, `${title}-title`)}</p> : null}
+          {title ? (
+            <p className="card-title">
+              {renderInline(title, `${title}-title`)}
+            </p>
+          ) : null}
 
           {subtitleLines.length ? (
             <div className="card-subtitle-lines">
               {subtitleLines.map((line, index) => (
-                <div key={`${line.text}-${index}`} className="card-subtitle-line">
+                <div
+                  key={`${line.text}-${index}`}
+                  className="card-subtitle-line"
+                >
                   <span className="card-subtitle">{line.text}</span>
                   <span className="card-period">{line.period}</span>
                 </div>
@@ -331,21 +455,34 @@ function BaseCard({
             </div>
           ) : subtitle || period ? (
             <p className="card-subtitle-row">
-              {subtitle ? <span className="card-subtitle">{subtitle}</span> : null}
-              {subtitle && period ? <span className="card-separator">·</span> : null}
+              {subtitle ? (
+                <span className="card-subtitle">{subtitle}</span>
+              ) : null}
+              {subtitle && period ? (
+                <span className="card-separator">·</span>
+              ) : null}
               {period ? <span className="card-period">{period}</span> : null}
             </p>
           ) : null}
 
-          {meta ? <p className="card-meta">{renderInline(meta, `${meta}-meta`)}</p> : null}
+          {meta ? (
+            <p className="card-meta">{renderInline(meta, `${meta}-meta`)}</p>
+          ) : null}
         </div>
 
-        {summary ? <p className="type-body card-summary">{renderInline(summary, `${summary}-summary`)}</p> : null}
+        {summary ? (
+          <p className="type-body card-summary">
+            {renderInline(summary, `${summary}-summary`)}
+          </p>
+        ) : null}
 
         {bullets.length ? (
           <ul className="markdown-list">
             {bullets.map((item, itemIndex) => (
-              <li key={`${item}-item-${itemIndex}`} className="markdown-list-item">
+              <li
+                key={`${item}-item-${itemIndex}`}
+                className="markdown-list-item"
+              >
                 <span className="accent-ink markdown-list-marker">•</span>
                 <span>{renderInline(item, `${item}-bullet-${itemIndex}`)}</span>
               </li>
@@ -367,7 +504,11 @@ function SkillGroupSection({ block }: { block: SkillGroupBlock }) {
         {block.skills.map((skill, index) => (
           <span
             key={`${skill}-${index}`}
-            className={block.variant === "solid" ? "chip chip-static chip-solid" : "chip chip-static chip-outline"}
+            className={
+              block.variant === "solid"
+                ? "chip chip-static chip-solid"
+                : "chip chip-static chip-outline"
+            }
           >
             {skill}
           </span>
@@ -378,64 +519,45 @@ function SkillGroupSection({ block }: { block: SkillGroupBlock }) {
 }
 
 function PostFeedSection({ feed }: { feed: string }) {
-  const feedPosts = posts.filter((post) => post.meta.feed === feed);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const availableTags = Array.from(
-    new Set(feedPosts.flatMap((post) => [...getVisiblePostTags(post), getPostYearTag(post)])),
-  ).sort((left, right) => left.localeCompare(right, "ru"));
-  const visiblePosts = selectedTags.length
-    ? feedPosts.filter((post) => {
-        const postFilterTags = new Set([...getVisiblePostTags(post), getPostYearTag(post)]);
-        return selectedTags.some((tag) => postFilterTags.has(tag));
-      })
-    : feedPosts;
-  const toggleTag = (tag: string) => {
-    setSelectedTags((currentTags) =>
-      currentTags.includes(tag)
-        ? currentTags.filter((currentTag) => currentTag !== tag)
-        : [...currentTags, tag],
-    );
-  };
-
+  const items = posts
+    .filter((post) => post.meta.feed === feed)
+    .map((post) => postListItem(post));
+  const [selected, setSelected] = useArchiveTopics(feed);
+  const visible = items.filter((item) => matchesTopics(item, selected));
   return (
     <section className="post-feed">
-      {availableTags.length ? (
-        <div className="post-feed-filter">
-          <div className="chip-list" aria-label="Фильтр по тегам">
-            {availableTags.map((tag) => {
-              const isSelected = selectedTags.includes(tag);
-
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  className={`chip chip-button ${isSelected ? "chip-solid" : "chip-outline"}`}
-                  aria-pressed={isSelected}
-                  onClick={() => toggleTag(tag)}
-                >
-                  {tag}
-                </button>
-              );
-            })}
-            <button
-              type="button"
-              className="post-feed-clear-button"
-              onClick={() => setSelectedTags([])}
-            >
-              Очистить все
-            </button>
-          </div>
-        </div>
-      ) : null}
-
-      {visiblePosts.map((post) => (
-        <PostPreviewCard
-          key={post.slug}
-          post={post}
-          filterTags={getVisiblePostTags(post)}
-          onTagToggle={toggleTag}
-        />
-      ))}
+      <TopicFilter
+        options={topicOptions(items)}
+        value={selected}
+        onValueChange={setSelected}
+        resultCount={visible.length}
+        totalCount={items.length}
+      />
+      <ContentList
+        items={visible}
+        variant="posts"
+        empty="По этим темам пока ничего нет."
+      />
+    </section>
+  );
+}
+function ProjectFeedSection() {
+  const [selected, setSelected] = useArchiveTopics("projects");
+  const visible = projectItems.filter((item) => matchesTopics(item, selected));
+  return (
+    <section className="post-feed">
+      <TopicFilter
+        options={topicOptions(projectItems)}
+        value={selected}
+        onValueChange={setSelected}
+        resultCount={visible.length}
+        totalCount={projectItems.length}
+      />
+      <ContentList
+        items={visible}
+        variant="projects"
+        empty="По этим темам пока ничего нет."
+      />
     </section>
   );
 }
@@ -452,8 +574,16 @@ function PostMediaSection({
   if (block.kind === "image") {
     return (
       <figure className="post-detail-media">
-        <img src={block.src} alt={block.alt ?? title} className="post-detail-image" />
-        {block.caption ? <figcaption className="post-media-caption">{block.caption}</figcaption> : null}
+        <img
+          src={block.src}
+          alt={block.alt ?? title}
+          className="post-detail-image"
+        />
+        {block.caption ? (
+          <figcaption className="post-media-caption">
+            {block.caption}
+          </figcaption>
+        ) : null}
       </figure>
     );
   }
@@ -468,24 +598,39 @@ function PostMediaSection({
           className="post-detail-video-preview"
           aria-label={`Открыть видео "${title}"`}
         >
-          <img src={thumbnailUrl} alt={block.alt ?? title} className="post-detail-video-image" />
+          <img
+            src={thumbnailUrl}
+            alt={block.alt ?? title}
+            className="post-detail-video-image"
+          />
           <span className="post-detail-video-overlay" aria-hidden="true">
             <PlayCircle size={40} strokeWidth={1.7} />
             <span className="post-detail-media-label">Видео</span>
           </span>
         </a>
-        {block.caption ? <figcaption className="post-media-caption">{block.caption}</figcaption> : null}
+        {block.caption ? (
+          <figcaption className="post-media-caption">
+            {block.caption}
+          </figcaption>
+        ) : null}
       </figure>
     );
   }
 
   return (
     <section className="post-detail-media post-detail-video">
-      <a href={block.src} target="_blank" rel="noopener noreferrer" className="post-detail-video-link">
+      <a
+        href={block.src}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="post-detail-video-link"
+      >
         <PlayCircle size={40} strokeWidth={1.7} />
         <span>Открыть видео</span>
       </a>
-      {block.caption ? <p className="post-media-caption">{block.caption}</p> : null}
+      {block.caption ? (
+        <p className="post-media-caption">{block.caption}</p>
+      ) : null}
     </section>
   );
 }

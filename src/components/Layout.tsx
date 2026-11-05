@@ -1,94 +1,103 @@
-import { Outlet, useLocation, Link } from "react-router";
-import { User, FileText, FolderOpen, BookOpen } from "lucide-react";
-import { useEffect, useRef } from "react";
-import { navigationItems } from "../content/documents";
-import type { MenuIconKey } from "../content/pages";
+import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
+import {
+  useLocation,
+  useNavigate,
+  useNavigationType,
+  useOutlet,
+} from "react-router";
+import { LivingBackground } from "./ui/LivingBackground";
+import { PageTransition } from "./ui/PageTransition";
+import { ArchiveProvider, type ArchiveSelections } from "./ArchiveState";
 
-const navIcons: Record<MenuIconKey, typeof User> = {
-  user: User,
-  "file-text": FileText,
-  "folder-open": FolderOpen,
-  "book-open": BookOpen,
-};
-
+const enterSelector =
+  ".ps-home-identity,.ps-home-section h2,.ps-home-section .ps-content-list li,.ps-home-more,.ps-personal-home>.ps-socials,.page-back-links,.ps-article>h1,.ps-article>.document-description,.post-meta,.markdown-content>p,.markdown-content>h2,.markdown-content>h3,.markdown-content>ul>li,.markdown-content>ol>li,.markdown-content>figure,.markdown-content>.card,.markdown-content>.skill-group,.post-feed>.ps-topic-filter,.post-feed>.ps-content-list>li";
 export function Layout() {
-  const location = useLocation();
-  const mainRef = useRef<HTMLElement>(null);
-  const copyrightText = "Этот сайт был подвергнут вайбкодингу, © 2026";
-
-  useEffect(() => {
-    const mainElement = mainRef.current;
-
-    if (mainElement) {
-      mainElement.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  const location = useLocation(),
+    navigationType = useNavigationType(),
+    navigate = useNavigate(),
+    outlet = useOutlet();
+  const input = useRef<"pointer" | "keyboard">("pointer"),
+    mounted = useRef(false),
+    snapshots = useRef(new Map<string, typeof outlet>());
+  const [selections, setSelections] = useState<ArchiveSelections>({});
+  snapshots.current.set(location.pathname, outlet);
+  const motion =
+    !mounted.current ||
+    (navigationType !== "POP" && input.current !== "keyboard");
+  useLayoutEffect(() => {
+    mounted.current = true;
+  }, []);
+  function intercept(event: MouseEvent<HTMLDivElement>) {
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
       return;
-    }
-
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [location.pathname]);
-
+    const link = (event.target as Element).closest<HTMLAnchorElement>("a");
+    if (!link || link.target === "_blank" || link.hasAttribute("download"))
+      return;
+    const raw = link.getAttribute("href");
+    if (!raw || raw.startsWith("#")) return;
+    const url = new URL(link.href, window.location.href);
+    if (
+      url.origin !== window.location.origin ||
+      /\.[a-z0-9]{2,6}$/i.test(url.pathname)
+    )
+      return;
+    if (url.pathname === location.pathname && url.hash) return;
+    event.preventDefault();
+    navigate(url.pathname + url.search + url.hash);
+  }
+  function changed() {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    document.getElementById("main-content")?.focus({ preventScroll: true });
+  }
   return (
-    <div className="app-shell site-shell flex h-screen w-full overflow-hidden">
-      <aside className="site-sidebar flex-col justify-between w-64 border-r border-[var(--color-border)] bg-[var(--color-bg)] p-8">
-        <nav className="flex flex-col gap-2">
-          {navigationItems.map((item) => {
-            const isActive = isNavigationItemActive(item.route, location.pathname);
-            const Icon = item.icon ? navIcons[item.icon] : null;
-
-            return (
-              <Link
-                key={item.route}
-                to={item.route}
-                className={`flex items-center gap-3 px-4 py-3 border transition-all ${
-                  isActive
-                    ? "bg-[var(--color-mint)] border-[var(--color-mint)] nav-item-active"
-                    : "border-[var(--color-border)] hover:border-[var(--color-text)]"
-                }`}
-              >
-                {Icon ? <Icon size={18} strokeWidth={1.5} /> : null}
-                <span className="type-menu-label">{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="type-caption">{copyrightText}</div>
-      </aside>
-
-      <main ref={mainRef} className="site-main flex-1 overflow-y-auto">
-        <div className="site-main-inner">
-          <Outlet />
-          <footer className="site-mobile-footer type-caption">{copyrightText}</footer>
-        </div>
-      </main>
-
-      <nav className="site-mobile-nav fixed bottom-0 left-0 right-0 flex items-center justify-around border-t border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-3 z-50">
-        {navigationItems.map((item) => {
-          const isActive = isNavigationItemActive(item.route, location.pathname);
-          const Icon = item.icon ? navIcons[item.icon] : null;
-
-          return (
-            <Link
-              key={item.route}
-              to={item.route}
-              className={`mobile-nav-item flex flex-col items-center justify-center gap-1 rounded-sm border px-2 py-2 transition-colors ${
-                isActive
-                  ? "bg-[var(--color-mint)] border-[var(--color-mint)] nav-item-active"
-                  : "border-[var(--color-border)] text-[var(--color-secondary)]"
-              }`}
-            >
-              {Icon ? <Icon size={20} strokeWidth={1.5} /> : null}
-              <span className="type-menu-label text-center">
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
-    </div>
+    <>
+      <LivingBackground />
+      <div
+        className="site-shell"
+        onPointerDownCapture={() => {
+          input.current = "pointer";
+        }}
+        onKeyDownCapture={() => {
+          input.current = "keyboard";
+        }}
+        onClick={intercept}
+      >
+        <a
+          className="skip-link"
+          href="#main-content"
+          onClick={(event) => {
+            event.preventDefault();
+            document
+              .getElementById("main-content")
+              ?.focus({ preventScroll: true });
+          }}
+        >
+          К содержимому
+        </a>
+        <main id="main-content" tabIndex={-1}>
+          <ArchiveProvider
+            selections={selections}
+            onChange={(feed, value) =>
+              setSelections((current) => ({ ...current, [feed]: value }))
+            }
+          >
+            <PageTransition
+              routeKey={location.pathname}
+              motion={motion}
+              enterSelector={enterSelector}
+              onPageChange={changed}
+              renderPage={(path) => snapshots.current.get(path)}
+            />
+          </ArchiveProvider>
+        </main>
+      </div>
+    </>
   );
-}
-
-function isNavigationItemActive(route: string, pathname: string) {
-  return pathname === route || (route !== "/" && pathname.startsWith(`${route}/`));
 }

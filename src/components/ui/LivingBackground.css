@@ -1,0 +1,76 @@
+.ps-living-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  isolation: isolate;
+  contain: paint;
+  background: var(--ps-ground, #edf0e7);
+  pointer-events: none;
+  user-select: none;
+}
+
+.ps-living-background__light {
+  position: absolute;
+  width: min(112vw, 1440px);
+  height: min(110vh, 960px);
+  pointer-events: none;
+}
+
+.ps-living-background__light--1 {
+  top: 12%;
+  left: 88%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--ps-mist-citron, rgb(201 232 157 / 62%)) 0%,
+    color-mix(
+        in srgb,
+        var(--ps-mist-citron, rgb(201 232 157 / 62%)) 70%,
+        transparent
+      )
+      29%,
+    transparent 72%
+  );
+}
+
+.ps-living-background__light--2 {
+  top: 50%;
+  left: 0;
+  background: radial-gradient(
+    ellipse at center,
+    var(--ps-mist-sea, rgb(150 210 188 / 43%)) 0%,
+    color-mix(
+        in srgb,
+        var(--ps-mist-sea, rgb(150 210 188 / 43%)) 72%,
+        transparent
+      )
+      30%,
+    transparent 73%
+  );
+}
+
+.ps-living-background__light--3 {
+  top: 91%;
+  left: 69%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--ps-mist-silver, rgb(246 250 224 / 76%)) 0%,
+    color-mix(
+        in srgb,
+        var(--ps-mist-silver, rgb(246 250 224 / 76%)) 70%,
+        transparent
+      )
+      30%,
+    transparent 73%
+  );
+}
+
+.ps-living-background__grain {
+  position: absolute;
+  inset: 0;
+  opacity: var(--ps-grain-opacity, 0.12);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.87' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath filter='url(%23g)' opacity='.55' d='M0 0h180v180H0z'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}

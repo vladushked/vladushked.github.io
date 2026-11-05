@@ -19,7 +19,7 @@ stroke: none
 headingVariant: page
 title: Блог о личном опыте в разработке софта, робототехнике, ИИ и инновациях
 meta: 
-action: Перейти в канал|https://t.me/vladosnakodil|primary
+action: Перейти в канал|https://t.me/tvlat|primary
 ::
 
 ::post-feed

@@ -1,0 +1,128 @@
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/roboto-mono";
+@import "../components/ui/MaterialSurfaces.css";
+
+.ps-root {
+  --ps-ground: #edf0e7;
+  --ps-surface: #f5f8ef;
+  --ps-raised: #fbfdf7;
+  --ps-text: #253029;
+  --ps-muted: #59665c;
+  --ps-faint: #69766b;
+  --ps-line: #cbd7c7;
+  --ps-accent: #3d6650;
+  --ps-accent-ink: #f7fff0;
+  --ps-accent-soft: #dcebcf;
+  --ps-hover: #e0e9d9;
+  --ps-danger: #a33d31;
+  --ps-focus: #3d6650;
+  --ps-material-light: #b8e89d;
+  --ps-material-deep: #74bda8;
+  --ps-mist-citron: rgb(201 232 157 / 62%);
+  --ps-mist-sea: rgb(150 210 188 / 43%);
+  --ps-mist-silver: rgb(246 250 224 / 76%);
+  --ps-grain-opacity: 0.12;
+  --ps-body-size: 14px;
+  --ps-body-weight: 400;
+  --ps-font: "Inter Variable", Inter, sans-serif;
+  --ps-mono: "Roboto Mono Variable", monospace;
+  --ps-space-1: 4px;
+  --ps-space-2: 8px;
+  --ps-space-3: 12px;
+  --ps-space-4: 16px;
+  --ps-space-5: 24px;
+  --ps-space-6: 32px;
+  --ps-space-7: 48px;
+  --ps-space-8: 72px;
+  --ps-radius: 22px;
+  --ps-control-radius: 12px;
+  --ps-ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --ps-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ps-ease-entry: cubic-bezier(0.16, 1, 0.3, 1);
+  --ps-home-enter: 600ms;
+  --ps-home-stagger: 50ms;
+  --ps-page-enter: var(--ps-home-enter);
+  --ps-page-stagger: var(--ps-home-stagger);
+  --ps-page-exit: 180ms;
+  color-scheme: light;
+  color: var(--ps-muted);
+  font-family: var(--ps-font);
+  font-size: var(--ps-body-size);
+  font-weight: var(--ps-body-weight);
+  line-height: 1.55;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+.ps-root[data-theme="dark"] {
+  --ps-ground: #152019;
+  --ps-surface: #202d23;
+  --ps-raised: #2a3a2d;
+  --ps-text: #edf3e4;
+  --ps-muted: #b1c3ae;
+  --ps-faint: #a2b69f;
+  --ps-line: #3a513d;
+  --ps-accent: #c2e9a1;
+  --ps-accent-ink: #1c2a20;
+  --ps-accent-soft: #354732;
+  --ps-hover: #2c3d2e;
+  --ps-danger: #f1a18d;
+  --ps-focus: #c2e9a1;
+  --ps-mist-citron: rgb(126 157 68 / 27%);
+  --ps-mist-sea: rgb(76 142 112 / 25%);
+  --ps-mist-silver: rgb(143 165 108 / 8%);
+  --ps-grain-opacity: 0.085;
+  color-scheme: dark;
+}
+.ps-root *,
+.ps-root *::before,
+.ps-root *::after {
+  box-sizing: border-box;
+}
+.ps-root ::selection {
+  background: var(--ps-accent-soft);
+  color: var(--ps-text);
+}
+.ps-root :where(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--ps-focus);
+  outline-offset: 4px;
+}
+.ps-root :where(button, input, select, textarea) {
+  font: inherit;
+  color: inherit;
+}
+.ps-root :where(button, a) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.ps-root :where(button) {
+  cursor: pointer;
+}
+.ps-root :where(button:disabled) {
+  cursor: not-allowed;
+}
+.ps-root :where(input, textarea) {
+  caret-color: var(--ps-accent);
+}
+.ps-root :where(h1, h2, h3, p, figure, blockquote) {
+  margin: 0;
+}
+.ps-root :where(h1, h2, h3) {
+  text-wrap: balance;
+  color: var(--ps-text);
+}
+.ps-root :where(a) {
+  color: inherit;
+}
+.ps-root * {
+  scrollbar-color: var(--ps-line) var(--ps-ground);
+  scrollbar-width: thin;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-root *,
+  .ps-root *::before,
+  .ps-root *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

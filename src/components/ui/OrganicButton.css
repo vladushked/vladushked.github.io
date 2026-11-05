@@ -1,0 +1,161 @@
+.ps-button__material {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--ps-line) 75%, transparent);
+  border-radius: inherit;
+  background: var(--ps-surface);
+  box-shadow:
+    inset 0 1px 2px rgb(255 255 255 / 42%),
+    0 2px 4px -3px rgb(21 44 30 / 20%);
+  pointer-events: none;
+  transition: transform 160ms var(--ps-ease);
+}
+
+.ps-button__lights {
+  position: absolute;
+  inset: -40% -10%;
+  opacity: 0.58;
+  pointer-events: none;
+}
+
+.ps-button__light {
+  position: absolute;
+  width: 100%;
+  height: 125%;
+  top: -10%;
+  left: -28%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--ps-material-light, #b8e89d) 0%,
+    color-mix(in srgb, var(--ps-material-light, #b8e89d) 78%, transparent) 26%,
+    color-mix(in srgb, var(--ps-material-light, #b8e89d) 28%, transparent) 50%,
+    transparent 73%
+  );
+  transform: rotate(-21deg);
+}
+
+.ps-button__light + .ps-button__light {
+  width: 80%;
+  height: 120%;
+  top: 6%;
+  left: 42%;
+  background: radial-gradient(
+    ellipse at center,
+    var(--ps-material-deep, #74bda8) 0%,
+    color-mix(in srgb, var(--ps-material-deep, #74bda8) 76%, transparent) 27%,
+    color-mix(in srgb, var(--ps-material-deep, #74bda8) 22%, transparent) 51%,
+    transparent 73%
+  );
+  transform: rotate(24deg);
+}
+
+.ps-button__frost {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    153deg,
+    color-mix(in srgb, var(--ps-surface) 35%, transparent),
+    color-mix(in srgb, var(--ps-surface) 7%, transparent) 55%,
+    color-mix(in srgb, var(--ps-ground) 20%, transparent)
+  );
+}
+
+.ps-button__frost::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  opacity: 0.15;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' opacity='.8' d='M0 0h180v180H0z'/%3E%3C/svg%3E");
+  background-size: 150px 150px;
+}
+
+.ps-button__pulse {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  background: radial-gradient(
+    ellipse at 50% 60%,
+    color-mix(in srgb, var(--ps-material-light, #b8e89d) 65%, white),
+    transparent 76%
+  );
+  transition: opacity 160ms var(--ps-ease);
+}
+
+.ps-button__material[data-pressed="true"] {
+  transform: scale(0.97, 0.94);
+}
+
+.ps-button__material[data-pressed="true"] .ps-button__pulse {
+  opacity: 0.45;
+}
+
+.ps-button__content {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  pointer-events: none;
+}
+
+.ps-button.ps-button--primary {
+  color: #10251b;
+}
+
+.ps-button--primary .ps-button__material {
+  border-color: color-mix(
+    in srgb,
+    var(--ps-material-deep, #74bda8) 36%,
+    var(--ps-line)
+  );
+  background: color-mix(
+    in srgb,
+    var(--ps-material-light, #b8e89d) 68%,
+    #dceecf
+  );
+}
+
+.ps-button--primary .ps-button__lights {
+  opacity: 0.95;
+}
+
+.ps-button--secondary .ps-button__lights,
+.ps-button--quiet .ps-button__lights {
+  opacity: 0.2;
+}
+
+.ps-button--secondary
+  .ps-button__material[data-pressed="true"]
+  .ps-button__pulse,
+.ps-button--quiet .ps-button__material[data-pressed="true"] .ps-button__pulse {
+  opacity: 0.08;
+}
+
+.ps-button--quiet .ps-button__material {
+  opacity: 0;
+  box-shadow: none;
+}
+
+.ps-button--quiet .ps-button__material[data-pressed="true"] {
+  opacity: 1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ps-button--quiet:not(:disabled):hover .ps-button__material {
+    opacity: 0.8;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-button__material,
+  .ps-button__pulse {
+    transition: none;
+  }
+
+  .ps-button__material[data-pressed="true"] {
+    transform: none;
+  }
+}

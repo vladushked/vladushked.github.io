@@ -1,15 +1,19 @@
+import { parseMediaDirective, type PostMediaBlock } from "./media";
 import { postVideoThumbnails } from "./generated/postVideoThumbnails";
 import { getFeedById } from "./feeds";
 import {
-  normalizeOptionalField,
   normalizeRequiredField,
   parseFrontmatter,
   normalizeRoute,
-  sanitizeHref,
-  splitField,
   type TextBlock,
 } from "./sharedMarkdown";
-import { buildRouteRegistry, buildSlugRegistry, extractMarkdownSlug, getPreviewText, parseDirectiveBlocks } from "./contentUtils";
+import {
+  buildRouteRegistry,
+  buildSlugRegistry,
+  extractMarkdownSlug,
+  getPreviewText,
+  parseDirectiveBlocks,
+} from "./contentUtils";
 
 const postSources = import.meta.glob("./cards/**/*.md", {
   query: "?raw",
@@ -24,14 +28,7 @@ export type PostMeta = {
   tags: string[];
 };
 
-export type PostMediaBlock = {
-  type: "media";
-  kind: "image" | "video";
-  src: string;
-  preview?: string;
-  alt?: string;
-  caption?: string;
-};
+export type { PostMediaBlock } from "./media";
 
 export type PostBlock = TextBlock | PostMediaBlock;
 
@@ -63,8 +60,15 @@ function parsePost(slug: string, source: string): PostDefinition {
   const date = parsePostDate(meta.date, slug);
   const feed = parsePostFeed(meta.feed, slug);
   const tags = parseTags(meta.tags, slug);
-  const blocks = parseDirectiveBlocks("Post", slug, content, buildDirectiveBlock);
-  const textBlocks = blocks.filter((block): block is TextBlock => block.type !== "media");
+  const blocks = parseDirectiveBlocks(
+    "Post",
+    slug,
+    content,
+    buildDirectiveBlock,
+  );
+  const textBlocks = blocks.filter(
+    (block): block is TextBlock => block.type !== "media",
+  );
   const feedDefinition = getFeedById(feed);
 
   if (!feedDefinition) {
@@ -128,7 +132,11 @@ function buildPostRoute(feedRoute: string, slug: string) {
   return normalizeRoute(`${prefix}/${slug}`, "Post", slug, "route");
 }
 
-function buildDirectiveBlock(name: string, bodyLines: string[], slug: string): PostMediaBlock {
+function buildDirectiveBlock(
+  name: string,
+  bodyLines: string[],
+  slug: string,
+): PostMediaBlock {
   if (name === "media") {
     return parseMediaDirective(bodyLines, slug);
   }
@@ -136,82 +144,10 @@ function buildDirectiveBlock(name: string, bodyLines: string[], slug: string): P
   throw new Error(`Post "${slug}" uses unsupported directive "::${name}".`);
 }
 
-function parseMediaDirective(lines: string[], slug: string): PostMediaBlock {
-  let kind = "";
-  let src = "";
-  let preview = "";
-  let alt = "";
-  let caption = "";
-
-  for (const rawLine of lines) {
-    const trimmedLine = rawLine.trim();
-
-    if (!trimmedLine) {
-      continue;
-    }
-
-    const field = splitField(trimmedLine, "Post", slug, "media");
-
-    if (field.key === "kind") {
-      kind = field.value;
-      continue;
-    }
-
-    if (field.key === "src") {
-      const safeHref = sanitizeHref(field.value);
-
-      if (!safeHref) {
-        throw new Error(`Post "${slug}" media has unsupported src "${field.value}".`);
-      }
-
-      src = safeHref;
-      continue;
-    }
-
-    if (field.key === "preview") {
-      const safeHref = sanitizeHref(field.value);
-
-      if (!safeHref) {
-        throw new Error(`Post "${slug}" media has unsupported preview "${field.value}".`);
-      }
-
-      preview = safeHref;
-      continue;
-    }
-
-    if (field.key === "alt") {
-      alt = field.value;
-      continue;
-    }
-
-    if (field.key === "caption") {
-      caption = field.value;
-      continue;
-    }
-
-    throw new Error(`Post "${slug}" "::media" does not support field "${field.key}".`);
-  }
-
-  if (!isMediaKind(kind) || !src) {
-    throw new Error(`Post "${slug}" "::media" requires valid "kind" and "src".`);
-  }
-
-  if (preview && kind !== "video") {
-    throw new Error(`Post "${slug}" "::media" field "preview" is only supported for videos.`);
-  }
-
-  return {
-    type: "media",
-    kind,
-    src,
-    preview: normalizeOptionalField(preview),
-    alt: normalizeOptionalField(alt),
-    caption: normalizeOptionalField(caption),
-  };
-}
-
 function getPreviewMedia(blocks: PostBlock[]) {
-  return blocks.find((block): block is PostMediaBlock => block.type === "media");
+  return blocks.find(
+    (block): block is PostMediaBlock => block.type === "media",
+  );
 }
 
 function getPreviewMediaThumbnail(slug: string, blocks: PostBlock[]) {
@@ -233,15 +169,13 @@ function getPreviewMediaThumbnail(slug: string, blocks: PostBlock[]) {
 }
 
 function comparePostsByDateDesc(left: PostDefinition, right: PostDefinition) {
-  const timeDiff = Date.parse(`${right.meta.date}T00:00:00Z`) - Date.parse(`${left.meta.date}T00:00:00Z`);
+  const timeDiff =
+    Date.parse(`${right.meta.date}T00:00:00Z`) -
+    Date.parse(`${left.meta.date}T00:00:00Z`);
 
   if (timeDiff !== 0) {
     return timeDiff;
   }
 
   return left.slug.localeCompare(right.slug);
-}
-
-function isMediaKind(value: string): value is PostMediaBlock["kind"] {
-  return value === "image" || value === "video";
 }

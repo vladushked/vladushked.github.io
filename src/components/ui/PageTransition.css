@@ -1,0 +1,10 @@
+.ps-page-transition {
+  position: relative;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-page-transition {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

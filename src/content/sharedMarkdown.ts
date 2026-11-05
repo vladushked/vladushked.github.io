@@ -4,6 +4,7 @@ export type ParsedMarkdownSource = {
 };
 
 export type TextBlock =
+  | { type: "code"; code: string; language?: string }
   | { type: "heading"; level: 2 | 3; text: string }
   | { type: "paragraph"; text: string }
   | { type: "unordered-list"; items: string[] }
@@ -28,7 +29,11 @@ type ParseBlocksOptions<TDirectiveBlock> = {
   ) => DirectiveResult<TDirectiveBlock>;
 };
 
-export function parseFrontmatter(kind: string, slug: string, source: string): ParsedMarkdownSource {
+export function parseFrontmatter(
+  kind: string,
+  slug: string,
+  source: string,
+): ParsedMarkdownSource {
   const normalized = source.replace(/\r\n/g, "\n").trim();
 
   if (!normalized.startsWith("---\n")) {
@@ -52,14 +57,18 @@ export function parseFrontmatter(kind: string, slug: string, source: string): Pa
     const separatorIndex = line.indexOf(":");
 
     if (separatorIndex === -1) {
-      throw new Error(`${kind} "${slug}" has invalid frontmatter line "${line}".`);
+      throw new Error(
+        `${kind} "${slug}" has invalid frontmatter line "${line}".`,
+      );
     }
 
     const key = line.slice(0, separatorIndex).trim();
     const rawValue = line.slice(separatorIndex + 1).trim();
 
     if (!key) {
-      throw new Error(`${kind} "${slug}" has a frontmatter entry without a key.`);
+      throw new Error(
+        `${kind} "${slug}" has a frontmatter entry without a key.`,
+      );
     }
 
     meta[key] = stripMatchingQuotes(rawValue);
@@ -67,7 +76,10 @@ export function parseFrontmatter(kind: string, slug: string, source: string): Pa
 
   return {
     meta,
-    content: lines.slice(closingIndex + 1).join("\n").trim(),
+    content: lines
+      .slice(closingIndex + 1)
+      .join("\n")
+      .trim(),
   };
 }
 
@@ -89,19 +101,45 @@ export function parseMarkdownBlocks<TDirectiveBlock>(
       continue;
     }
 
+    const fence = trimmedLine.match(/^```([\w+-]*)\s*$/);
+    if (fence) {
+      const codeLines: string[] = [];
+      index += 1;
+      while (index < lines.length && !/^```\s*$/.test(lines[index].trim())) {
+        codeLines.push(lines[index]);
+        index += 1;
+      }
+      if (index >= lines.length)
+        throw new Error(`${kind} "${slug}" has an unclosed code block.`);
+      index += 1;
+      blocks.push({
+        type: "code",
+        code: codeLines.join("\n"),
+        language: fence[1] || undefined,
+      });
+      continue;
+    }
+
     if (isDirectiveStart(trimmedLine)) {
       if (!options.parseDirectiveBlock) {
-        throw new Error(`${kind} "${slug}" does not support markdown directives in body.`);
+        throw new Error(
+          `${kind} "${slug}" does not support markdown directives in body.`,
+        );
       }
 
-      const directive = options.parseDirectiveBlock(lines, index, { kind, slug });
+      const directive = options.parseDirectiveBlock(lines, index, {
+        kind,
+        slug,
+      });
       blocks.push(directive.block);
       index = directive.nextIndex;
       continue;
     }
 
     if (/^#\s+/.test(trimmedLine)) {
-      throw new Error(`${kind} "${slug}" may not contain H1 headings. Use "##" for section titles.`);
+      throw new Error(
+        `${kind} "${slug}" may not contain H1 headings. Use "##" for section titles.`,
+      );
     }
 
     const headingMatch = trimmedLine.match(/^(#{2,3})\s+(.+)$/);
@@ -157,6 +195,7 @@ export function parseMarkdownBlocks<TDirectiveBlock>(
       if (
         !paragraphLine ||
         isDirectiveStart(paragraphLine) ||
+        /^```/.test(paragraphLine) ||
         /^#\s+/.test(paragraphLine) ||
         /^(#{2,3})\s+/.test(paragraphLine) ||
         /^[-*]\s+/.test(paragraphLine) ||
@@ -181,7 +220,12 @@ export function parseMarkdownBlocks<TDirectiveBlock>(
   return blocks;
 }
 
-export function splitField(line: string, kind: string, slug: string, scope: string) {
+export function splitField(
+  line: string,
+  kind: string,
+  slug: string,
+  scope: string,
+) {
   const separatorIndex = line.indexOf(":");
 
   if (separatorIndex === -1) {
@@ -201,9 +245,16 @@ export function splitField(line: string, kind: string, slug: string, scope: stri
   };
 }
 
-export function normalizeRequiredField(value: string | undefined, kind: string, slug: string, fieldName: string) {
+export function normalizeRequiredField(
+  value: string | undefined,
+  kind: string,
+  slug: string,
+  fieldName: string,
+) {
   if (!value || !value.trim()) {
-    throw new Error(`${kind} "${slug}" is missing required field "${fieldName}".`);
+    throw new Error(
+      `${kind} "${slug}" is missing required field "${fieldName}".`,
+    );
   }
 
   return value.trim();
@@ -217,11 +268,18 @@ export function normalizeOptionalField(value?: string) {
   return value.trim() ? value.trim() : undefined;
 }
 
-export function normalizeRoute(value: string, kind: string, slug: string, fieldName = "route") {
+export function normalizeRoute(
+  value: string,
+  kind: string,
+  slug: string,
+  fieldName = "route",
+) {
   const route = value.trim();
 
   if (!route.startsWith("/")) {
-    throw new Error(`${kind} "${slug}" field "${fieldName}" must start with "/".`);
+    throw new Error(
+      `${kind} "${slug}" field "${fieldName}" must start with "/".`,
+    );
   }
 
   if (route.length > 1 && route.endsWith("/")) {
@@ -231,12 +289,19 @@ export function normalizeRoute(value: string, kind: string, slug: string, fieldN
   return route;
 }
 
-export function parseInteger(value: string | undefined, kind: string, slug: string, fieldName: string) {
+export function parseInteger(
+  value: string | undefined,
+  kind: string,
+  slug: string,
+  fieldName: string,
+) {
   const normalized = normalizeRequiredField(value, kind, slug, fieldName);
   const parsedValue = Number.parseInt(normalized, 10);
 
   if (!Number.isInteger(parsedValue)) {
-    throw new Error(`${kind} "${slug}" has invalid "${fieldName}" value "${normalized}".`);
+    throw new Error(
+      `${kind} "${slug}" has invalid "${fieldName}" value "${normalized}".`,
+    );
   }
 
   return parsedValue;
@@ -268,7 +333,10 @@ export function stripMatchingQuotes(value: string) {
   const firstChar = value[0];
   const lastChar = value[value.length - 1];
 
-  if ((firstChar === "\"" && lastChar === "\"") || (firstChar === "'" && lastChar === "'")) {
+  if (
+    (firstChar === '"' && lastChar === '"') ||
+    (firstChar === "'" && lastChar === "'")
+  ) {
     return value.slice(1, -1);
   }
 
@@ -300,7 +368,11 @@ export function sanitizeHref(rawHref: string) {
   return null;
 }
 
-function parseList(lines: string[], startIndex: number, type: "unordered" | "ordered") {
+function parseList(
+  lines: string[],
+  startIndex: number,
+  type: "unordered" | "ordered",
+) {
   const items: string[] = [];
   let index = startIndex;
 
@@ -325,7 +397,11 @@ function parseList(lines: string[], startIndex: number, type: "unordered" | "ord
       if (!trimmedLine) {
         const nextLine = lines[index + 1];
 
-        if (nextLine && isContinuationLine(nextLine) && !isListMarker(nextLine.trim())) {
+        if (
+          nextLine &&
+          isContinuationLine(nextLine) &&
+          !isListMarker(nextLine.trim())
+        ) {
           index += 1;
           continue;
         }
@@ -333,7 +409,13 @@ function parseList(lines: string[], startIndex: number, type: "unordered" | "ord
         break;
       }
 
-      if (isHeading(trimmedLine) || isDirectiveStart(trimmedLine) || /^#\s+/.test(trimmedLine) || isBlockquote(trimmedLine) || isListMarker(trimmedLine)) {
+      if (
+        isHeading(trimmedLine) ||
+        isDirectiveStart(trimmedLine) ||
+        /^#\s+/.test(trimmedLine) ||
+        isBlockquote(trimmedLine) ||
+        isListMarker(trimmedLine)
+      ) {
         break;
       }
 

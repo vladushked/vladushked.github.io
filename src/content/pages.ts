@@ -1,3 +1,4 @@
+import { parseMediaDirective, type PostMediaBlock } from "./media";
 import {
   normalizeOptionalField,
   normalizeRequiredField,
@@ -9,7 +10,12 @@ import {
   splitField,
   type TextBlock,
 } from "./sharedMarkdown";
-import { buildRouteRegistry, buildSlugRegistry, extractMarkdownSlug, parseDirectiveBlocks } from "./contentUtils";
+import {
+  buildRouteRegistry,
+  buildSlugRegistry,
+  extractMarkdownSlug,
+  parseDirectiveBlocks,
+} from "./contentUtils";
 
 const pageSources = import.meta.glob("./pages/*.md", {
   query: "?raw",
@@ -17,7 +23,12 @@ const pageSources = import.meta.glob("./pages/*.md", {
   eager: true,
 }) as Record<string, string>;
 
-const supportedMenuIcons = ["user", "file-text", "folder-open", "book-open"] as const;
+const supportedMenuIcons = [
+  "user",
+  "file-text",
+  "folder-open",
+  "book-open",
+] as const;
 
 type HeroContactType = "phone" | "email" | "telegram";
 type CardKind = "experience" | "education";
@@ -43,6 +54,8 @@ export type PageHeaderMeta = {
   title?: string;
   eyebrow?: string;
   description?: string;
+  projectTags?: string[];
+  projectIcon?: string;
 };
 
 type HeroContact = {
@@ -109,7 +122,15 @@ export type PageFeedBlock = {
   feed: string;
 };
 
-export type PageBlock = TextBlock | HeroBlock | CardBlock | SkillGroupBlock | PageFeedBlock;
+export type PageBlock =
+  | TextBlock
+  | PostMediaBlock
+  | HeroBlock
+  | CardBlock
+  | SkillGroupBlock
+  | PageFeedBlock
+  | { type: "project-feed" }
+  | { type: "native-demo"; poster?: string };
 
 export type PageDefinition = {
   slug: string;
@@ -127,7 +148,10 @@ const pageRegistry = buildSlugRegistry(pages, "Page");
 const routeRegistry = buildRouteRegistry(pages, "Page");
 
 export const navigationItems = pages
-  .filter((page): page is PageDefinition & { navigation: NavigationItemDefinition } => Boolean(page.navigation))
+  .filter(
+    (page): page is PageDefinition & { navigation: NavigationItemDefinition } =>
+      Boolean(page.navigation),
+  )
   .map((page) => page.navigation)
   .sort((left, right) => left.order - right.order);
 
@@ -156,13 +180,22 @@ function parsePage(slug: string, source: string): PageDefinition {
       title: normalizeOptionalField(meta.title),
       eyebrow: normalizeOptionalField(meta.eyebrow),
       description: normalizeOptionalField(meta.description),
+      projectTags: meta.projectTags
+        ?.split(",")
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+      projectIcon: normalizeOptionalField(meta.projectIcon),
     },
     blocks,
     navigation: showInNav ? parseNavigationMeta(slug, route, meta) : undefined,
   };
 }
 
-function parseNavigationMeta(slug: string, route: string, meta: Record<string, string>) {
+function parseNavigationMeta(
+  slug: string,
+  route: string,
+  meta: Record<string, string>,
+) {
   const label = normalizeRequiredField(meta.navLabel, "Page", slug, "navLabel");
   const icon = normalizeRequiredField(meta.navIcon, "Page", slug, "navIcon");
   const order = parseInteger(meta.order, "Page", slug, "order");
@@ -182,18 +215,41 @@ function parseNavigationMeta(slug: string, route: string, meta: Record<string, s
 }
 
 function parsePageBlocks(slug: string, source: string) {
-  const blocks = parseDirectiveBlocks("Page", slug, source, buildDirectiveBlock);
+  const blocks = parseDirectiveBlocks(
+    "Page",
+    slug,
+    source,
+    buildDirectiveBlock,
+  );
 
   const heroCount = blocks.filter((block) => block.type === "hero").length;
 
   if (heroCount > 1) {
-    throw new Error(`Page "${slug}" may not contain more than one "::hero" block.`);
+    throw new Error(
+      `Page "${slug}" may not contain more than one "::hero" block.`,
+    );
   }
 
   return blocks;
 }
 
-function buildDirectiveBlock(name: string, bodyLines: string[], slug: string): PageBlock {
+function buildDirectiveBlock(
+  name: string,
+  bodyLines: string[],
+  slug: string,
+): PageBlock {
+  if (name === "media") return parseMediaDirective(bodyLines, slug, "Page");
+  if (name === "project-feed") return { type: name };
+  if (name === "native-demo") {
+    let poster: string | undefined;
+    for (const line of bodyLines.filter((line) => line.trim())) {
+      const field = splitField(line.trim(), "Page", slug, name);
+      if (field.key !== "poster" || !sanitizeHref(field.value))
+        throw new Error(`Page "${slug}" has an invalid native-demo poster.`);
+      poster = sanitizeHref(field.value) || undefined;
+    }
+    return { type: name, poster };
+  }
   if (name === "hero") {
     return parseHeroDirective(bodyLines, slug);
   }
@@ -226,7 +282,9 @@ function parsePostFeedDirective(lines: string[], slug: string): PageFeedBlock {
     const field = splitField(trimmedLine, "Page", slug, "post-feed");
 
     if (field.key !== "feed") {
-      throw new Error(`Page "${slug}" "::post-feed" does not support field "${field.key}".`);
+      throw new Error(
+        `Page "${slug}" "::post-feed" does not support field "${field.key}".`,
+      );
     }
 
     feed = normalizeRequiredField(field.value, "Page", slug, "feed");
@@ -273,7 +331,9 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
       const safeHref = sanitizeHref(field.value);
 
       if (!safeHref) {
-        throw new Error(`Page "${slug}" hero has unsupported photo "${field.value}".`);
+        throw new Error(
+          `Page "${slug}" hero has unsupported photo "${field.value}".`,
+        );
       }
 
       photo = safeHref;
@@ -282,7 +342,9 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
 
     if (field.key === "imageSize") {
       if (!isHeroImageSize(field.value)) {
-        throw new Error(`Page "${slug}" hero has unsupported imageSize "${field.value}".`);
+        throw new Error(
+          `Page "${slug}" hero has unsupported imageSize "${field.value}".`,
+        );
       }
 
       imageSize = field.value;
@@ -291,7 +353,9 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
 
     if (field.key === "photoLayout") {
       if (!isHeroPhotoLayout(field.value)) {
-        throw new Error(`Page "${slug}" hero has unsupported photoLayout "${field.value}".`);
+        throw new Error(
+          `Page "${slug}" hero has unsupported photoLayout "${field.value}".`,
+        );
       }
 
       photoLayout = field.value;
@@ -353,7 +417,9 @@ function parseHeroDirective(lines: string[], slug: string): HeroBlock {
       continue;
     }
 
-    throw new Error(`Page "${slug}" "::hero" does not support field "${field.key}".`);
+    throw new Error(
+      `Page "${slug}" "::hero" does not support field "${field.key}".`,
+    );
   }
 
   if (!name) {
@@ -462,11 +528,15 @@ function parseCardDirective(lines: string[], slug: string): CardBlock {
       continue;
     }
 
-    throw new Error(`Page "${slug}" "::card" does not support field "${field.key}".`);
+    throw new Error(
+      `Page "${slug}" "::card" does not support field "${field.key}".`,
+    );
   }
 
   if (!isCardKind(kind) || !title) {
-    throw new Error(`Page "${slug}" "::card" requires valid "kind" and "title".`);
+    throw new Error(
+      `Page "${slug}" "::card" requires valid "kind" and "title".`,
+    );
   }
 
   return {
@@ -485,7 +555,10 @@ function parseCardDirective(lines: string[], slug: string): CardBlock {
   };
 }
 
-function parseSkillGroupDirective(lines: string[], slug: string): SkillGroupBlock {
+function parseSkillGroupDirective(
+  lines: string[],
+  slug: string,
+): SkillGroupBlock {
   let title = "";
   let variant: SkillGroupVariant | "" = "";
   const skills: string[] = [];
@@ -514,11 +587,15 @@ function parseSkillGroupDirective(lines: string[], slug: string): SkillGroupBloc
       continue;
     }
 
-    throw new Error(`Page "${slug}" "::skill-group" does not support field "${field.key}".`);
+    throw new Error(
+      `Page "${slug}" "::skill-group" does not support field "${field.key}".`,
+    );
   }
 
   if (!title || !variant || !skills.length) {
-    throw new Error(`Page "${slug}" "::skill-group" requires "title", "variant", and at least one "skill".`);
+    throw new Error(
+      `Page "${slug}" "::skill-group" requires "title", "variant", and at least one "skill".`,
+    );
   }
 
   return {
@@ -529,18 +606,26 @@ function parseSkillGroupDirective(lines: string[], slug: string): SkillGroupBloc
   };
 }
 
-function parseSubtitleLine(value: string, slug: string, directiveName: string): CardSubtitleLine {
+function parseSubtitleLine(
+  value: string,
+  slug: string,
+  directiveName: string,
+): CardSubtitleLine {
   const [text, period, ...rest] = value.split("|").map((part) => part.trim());
 
   if (!text || !period || rest.length) {
-    throw new Error(`Page "${slug}" "::${directiveName}" has invalid subtitle line "${value}".`);
+    throw new Error(
+      `Page "${slug}" "::${directiveName}" has invalid subtitle line "${value}".`,
+    );
   }
 
   return { text, period };
 }
 
 function parseHeroContact(value: string, slug: string): HeroContact {
-  const [type, label, href, ...rest] = value.split("|").map((part) => part.trim());
+  const [type, label, href, ...rest] = value
+    .split("|")
+    .map((part) => part.trim());
 
   if (!isHeroContactType(type) || !label || !href || rest.length) {
     throw new Error(`Page "${slug}" hero has invalid contact "${value}".`);
@@ -549,14 +634,18 @@ function parseHeroContact(value: string, slug: string): HeroContact {
   const safeHref = sanitizeHref(href);
 
   if (!safeHref) {
-    throw new Error(`Page "${slug}" hero has unsupported contact href "${href}".`);
+    throw new Error(
+      `Page "${slug}" hero has unsupported contact href "${href}".`,
+    );
   }
 
   return { type, label, href: safeHref };
 }
 
 function parseHeroAction(value: string, slug: string): HeroAction {
-  const [label, href, variant = "primary", ...rest] = value.split("|").map((part) => part.trim());
+  const [label, href, variant = "primary", ...rest] = value
+    .split("|")
+    .map((part) => part.trim());
 
   if (!label || !href || !isHeroActionVariant(variant) || rest.length) {
     throw new Error(`Page "${slug}" hero has invalid action "${value}".`);
@@ -565,7 +654,9 @@ function parseHeroAction(value: string, slug: string): HeroAction {
   const safeHref = sanitizeHref(href);
 
   if (!safeHref) {
-    throw new Error(`Page "${slug}" hero has unsupported action href "${href}".`);
+    throw new Error(
+      `Page "${slug}" hero has unsupported action href "${href}".`,
+    );
   }
 
   return {

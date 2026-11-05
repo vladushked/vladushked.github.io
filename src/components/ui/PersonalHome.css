@@ -1,0 +1,82 @@
+/* The homepage keeps its approved layout; motion only introduces and answers links. */
+.ps-personal-home {
+  width: fit-content;
+  max-width: 100%;
+  margin-inline: auto;
+}
+.ps-home-identity + .ps-home-section {
+  margin-top: 36px;
+}
+.ps-personal-home .ps-link {
+  transition: color 200ms ease;
+}
+.ps-personal-home .ps-identity-name {
+  display: inline-block;
+}
+.ps-personal-home .ps-socials .ps-link {
+  display: inline-flex;
+}
+.ps-personal-home .ps-home-section .ps-link {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+.ps-personal-home .ps-home-section h2 .ps-link {
+  display: inline-block;
+}
+.ps-personal-home .ps-home-section .ps-link::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 5px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 300ms var(--ps-ease);
+  pointer-events: none;
+}
+.ps-personal-home .ps-home-section h2 .ps-link::before {
+  bottom: -3px;
+}
+.ps-personal-home .ps-home-section .ps-link::after {
+  content: "→" / "";
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  font: 14px/1 var(--ps-font);
+  opacity: 0;
+  transform: translate(-2px, -50%);
+  transition:
+    opacity 200ms ease,
+    transform 200ms var(--ps-ease);
+  pointer-events: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .ps-personal-home .ps-link:hover {
+    text-decoration: none;
+    color: var(--ps-accent);
+  }
+  .ps-personal-home .ps-home-section .ps-link:hover::before {
+    transform: scaleX(1);
+  }
+  .ps-personal-home .ps-home-section .ps-link:hover::after {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+}
+.ps-personal-home .ps-home-section .ps-link:focus-visible::before {
+  transform: scaleX(1);
+  transition: none;
+}
+.ps-personal-home .ps-home-section .ps-link:focus-visible::after {
+  opacity: 1;
+  transform: translate(0, -50%);
+  transition: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-personal-home .ps-link::before,
+  .ps-personal-home .ps-link::after {
+    transition: none;
+  }
+}

@@ -1,19 +1,21 @@
 import { createElement } from "react";
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { DocumentPage } from "./components/DocumentPage";
+import { HomePage } from "./components/HomePage";
 import { Layout } from "./components/Layout";
-import { navigationItems, notFoundDocument, siteDocuments, type SiteDocument } from "./content/documents";
-
-const rootDocument = siteDocuments.find((document) => document.kind === "page" && document.route === "/");
-const fallbackRoute = navigationItems[0]?.route;
-
+import { notFoundDocument, siteDocuments } from "./content/documents";
 export const router = createBrowserRouter([
   {
     path: "/",
     Component: Layout,
     children: [
-      createRootRoute(),
-      ...siteDocuments.filter((document) => document.route !== "/").map(createDocumentRoute),
+      { index: true, element: createElement(HomePage) },
+      ...siteDocuments
+        .filter((document) => document.route !== "/")
+        .map((document) => ({
+          path: document.route.slice(1),
+          element: createElement(DocumentPage, { document }),
+        })),
       {
         path: "*",
         element: createElement(DocumentPage, {
@@ -28,38 +30,3 @@ export const router = createBrowserRouter([
     ],
   },
 ]);
-
-function createRootRoute() {
-  if (rootDocument) {
-    return {
-      index: true,
-      element: createElement(DocumentPage, { document: rootDocument }),
-    };
-  }
-
-  if (fallbackRoute) {
-    return {
-      index: true,
-      element: createElement(Navigate, { to: fallbackRoute, replace: true }),
-    };
-  }
-
-  return {
-    index: true,
-    element: createElement(DocumentPage, {
-      document: {
-        kind: "page",
-        slug: notFoundDocument.slug,
-        route: notFoundDocument.route,
-        page: notFoundDocument,
-      },
-    }),
-  };
-}
-
-function createDocumentRoute(document: SiteDocument) {
-  return {
-    path: document.route.slice(1),
-    element: createElement(DocumentPage, { document }),
-  };
-}
