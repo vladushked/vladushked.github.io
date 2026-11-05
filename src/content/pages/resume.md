@@ -11,13 +11,10 @@ fill: gray
 stroke: none
 headingVariant: page
 title: Robotics Tech Lead / Lead Python & ROS2 Engineer
-meta: Опыт по резюме от 9 июля 2026: 8 лет 11 месяцев
 action: Написать в Telegram|https://t.me/vladislavplotnikov|primary
 contact: phone|+7 (963) 922-34-64|tel:+79639223464
 contact: email|vladislav.a.plotnikov@yandex.ru|mailto:vladislav.a.plotnikov@yandex.ru
 ::
-
-Карьерные сведения приведены по резюме от 9 июля 2026 года.
 
 ## О себе
 

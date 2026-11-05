@@ -111,7 +111,7 @@ export function useOrganicButton(disabled: boolean) {
     if (disabled) controller.current.stop();
   }, [disabled]);
 
-  function move(event: PointerEvent<HTMLButtonElement>) {
+  function move(event: PointerEvent<HTMLElement>) {
     if (disabled || event.pointerType !== "mouse") return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const inside =

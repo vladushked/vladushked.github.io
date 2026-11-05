@@ -1,5 +1,6 @@
 import {
   createContext,
+  forwardRef,
   useContext,
   useEffect,
   useState,
@@ -77,26 +78,30 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "secondary" | "quiet";
   busy?: boolean;
 };
-export function Button({
-  variant = "secondary",
-  busy = false,
-  disabled,
-  children,
-  className = "",
-  onPointerEnter,
-  onPointerMove,
-  onPointerLeave,
-  onPointerDown,
-  onPointerUp,
-  onPointerCancel,
-  onKeyDown,
-  onClick,
-  ...props
-}: ButtonProps) {
+export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
+  {
+    variant = "secondary",
+    busy = false,
+    disabled,
+    children,
+    className = "",
+    onPointerEnter,
+    onPointerMove,
+    onPointerLeave,
+    onPointerDown,
+    onPointerUp,
+    onPointerCancel,
+    onKeyDown,
+    onClick,
+    ...props
+  },
+  ref,
+) {
   const blocked = Boolean(disabled || busy),
     material = useOrganicButton(blocked);
   return (
     <button
+      ref={ref}
       type="button"
       {...props}
       disabled={blocked}
@@ -138,23 +143,87 @@ export function Button({
         if (!blocked) onClick?.(event);
       }}
     >
-      <span
-        ref={material.surfaceRef}
-        className="ps-button__material"
-        aria-hidden="true"
-      >
-        <span ref={material.lightsRef} className="ps-button__lights">
-          <span className="ps-button__light" />
-          <span className="ps-button__light" />
-        </span>
-        <span className="ps-button__frost" />
-        <span className="ps-button__pulse" />
-      </span>
+      <ButtonMaterial material={material} />
       <span className="ps-button__content">
         {busy && <span className="ps-spinner" aria-hidden="true" />}
         {children}
       </span>
     </button>
+  );
+});
+function ButtonMaterial({
+  material,
+}: {
+  material: ReturnType<typeof useOrganicButton>;
+}) {
+  return (
+    <span
+      ref={material.surfaceRef}
+      className="ps-button__material"
+      aria-hidden="true"
+    >
+      <span ref={material.lightsRef} className="ps-button__lights">
+        <span className="ps-button__light" />
+        <span className="ps-button__light" />
+      </span>
+      <span className="ps-button__frost" />
+      <span className="ps-button__pulse" />
+    </span>
+  );
+}
+export function ButtonLink({
+  variant = "secondary",
+  children,
+  className = "",
+  onPointerEnter,
+  onPointerMove,
+  onPointerLeave,
+  onPointerDown,
+  onPointerUp,
+  onPointerCancel,
+  onKeyDown,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & {
+  href: string;
+  variant?: ButtonProps["variant"];
+}) {
+  const material = useOrganicButton(false);
+  return (
+    <a
+      {...props}
+      className={`ps-button ps-button--${variant} ${className}`}
+      onPointerEnter={(event) => {
+        onPointerEnter?.(event);
+        if (!event.defaultPrevented) material.move(event);
+      }}
+      onPointerMove={(event) => {
+        onPointerMove?.(event);
+        if (!event.defaultPrevented) material.move(event);
+      }}
+      onPointerLeave={(event) => {
+        onPointerLeave?.(event);
+        material.rest();
+      }}
+      onPointerDown={(event) => {
+        onPointerDown?.(event);
+        if (!event.defaultPrevented && event.button === 0) material.press();
+      }}
+      onPointerUp={(event) => {
+        onPointerUp?.(event);
+        material.release();
+      }}
+      onPointerCancel={(event) => {
+        onPointerCancel?.(event);
+        material.rest();
+      }}
+      onKeyDown={(event) => {
+        onKeyDown?.(event);
+        if (event.key === "Enter" || event.key === " ") material.stop();
+      }}
+    >
+      <ButtonMaterial material={material} />
+      <span className="ps-button__content">{children}</span>
+    </a>
   );
 }
 export function Identity({

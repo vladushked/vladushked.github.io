@@ -78,16 +78,7 @@
 }
 .gg-native-open {
   min-height: 48px;
-  border: 1px solid #b8e89d80;
-  border-radius: 10px;
   padding: 12px 22px;
-  background: #b8e89d;
-  color: #17251b;
-  font: 500 14px/1.5 var(--ps-font, system-ui);
-  cursor: pointer;
-}
-.gg-native-open:hover {
-  background: #cbf4b4;
 }
 .gg-native-open:focus-visible {
   outline: 2px solid #dadada;

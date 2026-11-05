@@ -32,11 +32,19 @@
   gap: 9px;
   font-size: 14px;
   font-weight: 500;
+  text-decoration: none;
   background: transparent;
   color: var(--ps-text);
 }
 .ps-button:disabled {
   opacity: 0.5;
+}
+.ps-article a.ps-button {
+  text-decoration: none;
+}
+.ps-article a.ps-button--primary,
+.ps-article a.ps-button--primary:hover {
+  color: #10251b;
 }
 .ps-button[aria-busy="true"] {
   opacity: 0.8;

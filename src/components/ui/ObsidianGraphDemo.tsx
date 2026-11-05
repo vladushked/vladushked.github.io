@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { RotateCcw, Settings } from "lucide-react";
 import { nativeDocument } from "./nativeDemoDocument";
+import { Button } from "./primitives";
 import "./ObsidianGraphDemo.css";
 
 export interface ObsidianGraphDemoProps {
@@ -162,14 +163,14 @@ export function ObsidianGraphDemo({
       )}
       {!opened && (
         <div className="gg-native-cover">
-          <button
+          <Button
             ref={openButton}
             className="gg-native-open"
-            type="button"
+            variant="primary"
             onClick={open}
           >
             Открыть демо
-          </button>
+          </Button>
         </div>
       )}
     </section>

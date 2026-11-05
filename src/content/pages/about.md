@@ -1,7 +1,12 @@
 ---
 route: /about
 showInNav: false
-title: Об авторе
+title: Владислав Плотников
 ---
 
-[Резюме: опыт, образование и навыки](/resume).
+::hero
+name: Владислав Плотников
+photo: /images/face.jpg
+title: Robotics Tech Lead
+action: cv|/resume|secondary
+::

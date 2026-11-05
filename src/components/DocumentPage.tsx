@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronRight,
   Mail,
   Phone,
   PlayCircle,
@@ -19,7 +20,7 @@ import type {
 } from "../content/pages";
 import type { PostBlock, PostMediaBlock } from "../content/posts";
 import { sanitizeHref, type TextBlock } from "../content/sharedMarkdown";
-import { ContentList } from "./ui/primitives";
+import { ButtonLink, ContentList, Identity, TextLink } from "./ui/primitives";
 import { TopicFilter } from "./ui/TopicFilter";
 import { CodeBlock } from "./ui/primitives";
 import { useArchiveTopics } from "./ArchiveState";
@@ -45,6 +46,7 @@ type BaseCardProps = {
   summary?: string;
   subtitleLines: Array<{ text: string; period: string }>;
   bullets: string[];
+  collapseBullets?: boolean;
   footer?: ReactNode;
 };
 
@@ -53,6 +55,43 @@ const inlineTokenPattern =
 
 export function DocumentPage({ document }: { document: SiteDocument }) {
   if (document.kind === "page") {
+    if (document.slug === "about") {
+      const identity = document.page.blocks.find(
+        (block): block is HeroBlock => block.type === "hero",
+      );
+      if (!identity)
+        throw Error("About page requires a Markdown identity block.");
+      return (
+        <div className="site-preview site-preview--home">
+          <div className="ps-personal-home ps-about">
+            <nav className="page-back-links" aria-label="Возврат">
+              <Link to="/" className="site-back ps-link ps-link--muted">
+                <ArrowLeft size={14} aria-hidden="true" />
+                На главную
+              </Link>
+            </nav>
+            <div className="ps-home-identity">
+              <Identity
+                name={identity.name}
+                subtitle={identity.title}
+                avatarSrc={identity.photo}
+                href="/about"
+                heading="h1"
+              />
+            </div>
+            <section className="ps-home-section" aria-label="Резюме">
+              <h2>
+                {identity.actions.map((action) => (
+                  <TextLink key={action.href} href={action.href}>
+                    {action.label}
+                  </TextLink>
+                ))}
+              </h2>
+            </section>
+          </div>
+        </div>
+      );
+    }
     const isBlog = document.page.blocks.some(
       (block) => block.type === "post-feed",
     );
@@ -115,7 +154,8 @@ function PageFrame({
       <article className="ps-article">
         <nav className="page-back-links" aria-label="Возврат">
           <Link to="/" className="site-back ps-link ps-link--muted">
-            ← На главную
+            <ArrowLeft size={14} aria-hidden="true" />
+            На главную
           </Link>
           {backLink && (
             <Link to={backLink.to} className="site-back ps-link ps-link--muted">
@@ -410,6 +450,7 @@ function CardSection({ block }: { block: CardBlock }) {
       summary={block.summary}
       subtitleLines={block.subtitleLines}
       bullets={block.bullets}
+      collapseBullets={block.kind === "experience"}
     />
   );
 }
@@ -426,8 +467,19 @@ function BaseCard({
   summary,
   subtitleLines,
   bullets,
+  collapseBullets = false,
   footer,
 }: BaseCardProps) {
+  const bulletList = bullets.length ? (
+    <ul className="markdown-list">
+      {bullets.map((item, itemIndex) => (
+        <li key={`${item}-item-${itemIndex}`} className="markdown-list-item">
+          <span className="accent-ink markdown-list-marker">•</span>
+          <span>{renderInline(item, `${item}-bullet-${itemIndex}`)}</span>
+        </li>
+      ))}
+    </ul>
+  ) : null;
   return (
     <section
       className={`card card-fill-${fill} card-stroke-${stroke} card-heading-${headingVariant}`}
@@ -476,19 +528,15 @@ function BaseCard({
           </p>
         ) : null}
 
-        {bullets.length ? (
-          <ul className="markdown-list">
-            {bullets.map((item, itemIndex) => (
-              <li
-                key={`${item}-item-${itemIndex}`}
-                className="markdown-list-item"
-              >
-                <span className="accent-ink markdown-list-marker">•</span>
-                <span>{renderInline(item, `${item}-bullet-${itemIndex}`)}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        {collapseBullets && bulletList ? (
+          <details className="experience-details">
+            <summary>
+              <ChevronRight size={15} aria-hidden="true" />
+              Подробнее об опыте
+            </summary>
+            {bulletList}
+          </details>
+        ) : bulletList}
 
         {footer}
       </div>
@@ -740,6 +788,20 @@ function renderHeroAction(action: HeroBlock["actions"][number], key: string) {
   );
 
   const className = `hero-action hero-action-${action.variant}`;
+
+  if (action.href.startsWith("https://t.me/")) {
+    return (
+      <ButtonLink
+        key={key}
+        href={action.href}
+        variant={action.variant}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {content}
+      </ButtonLink>
+    );
+  }
 
   if (action.href.startsWith("/")) {
     return (
