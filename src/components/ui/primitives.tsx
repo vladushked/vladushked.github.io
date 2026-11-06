@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useOrganicButton } from "./useOrganicButton";
 import "./OrganicButton.css";
+import { useLanguage } from "../../i18n";
 
 export type Theme = "light" | "dark" | "system";
 const ThemeContext = createContext<"light" | "dark">("light");
@@ -243,6 +244,7 @@ export function Identity({
   compact?: boolean;
   heading?: "h1" | "h2";
 }) {
+  const { t } = useLanguage();
   const Name = heading || "div";
   return (
     <div className={`ps-identity${compact ? " ps-identity--compact" : ""}`}>
@@ -250,7 +252,7 @@ export function Identity({
         href={href}
         onClick={onClick}
         className="ps-avatar-link"
-        aria-label={`Об авторе: ${name}`}
+        aria-label={`${t("aboutAuthor")}: ${name}`}
       >
         <span className="ps-avatar">
           {avatarSrc ? (
@@ -317,7 +319,7 @@ export function ContentList({
   variant = "projects",
   compact = false,
   onNavigate,
-  empty = "Здесь пока нет публикаций.",
+  empty,
 }: {
   items: ListItem[];
   variant?: "projects" | "posts";
@@ -325,6 +327,7 @@ export function ContentList({
   onNavigate?: (id: string) => void;
   empty?: ReactNode;
 }) {
+  const { t } = useLanguage();
   return items.length ? (
     <ul
       className={`ps-content-list ps-content-list--${variant}${compact ? " ps-content-list--compact" : ""}${items.some((item) => item.icon) ? " ps-content-list--markers" : ""}`}
@@ -355,13 +358,15 @@ export function ContentList({
                     : undefined
                 }
               >
-                <span className="ps-content-list-label">{item.title}</span>
+                <span className="ps-content-list-label" lang="ru">
+                  {item.title}
+                </span>
               </TextLink>
               {!compact && item.date && (
                 <time dateTime={item.dateTime}>{item.date}</time>
               )}
             </div>
-            {!compact && item.description && <p>{item.description}</p>}
+            {!compact && item.description && <p lang="ru">{item.description}</p>}
             {!compact && item.meta && (
               <span className="ps-list-meta">{item.meta}</span>
             )}
@@ -370,7 +375,7 @@ export function ContentList({
       ))}
     </ul>
   ) : (
-    <p className="ps-empty">{empty}</p>
+    <p className="ps-empty">{empty ?? t("emptyPosts")}</p>
   );
 }
 export function SocialLinks({
@@ -380,8 +385,9 @@ export function SocialLinks({
   items: { label: string; href: string }[];
   className?: string;
 }) {
+  const { t } = useLanguage();
   return (
-    <nav className={`ps-socials ${className}`} aria-label="Социальные ссылки">
+    <nav className={`ps-socials ${className}`} aria-label={t("socialLinks")}>
       {items.map((item) => (
         <TextLink
           key={item.href}
@@ -389,7 +395,7 @@ export function SocialLinks({
           tone="muted"
           external={!item.href.startsWith("mailto:")}
         >
-          {item.label}
+          {item.label === "email" ? t("email") : item.label}
         </TextLink>
       ))}
     </nav>
@@ -425,19 +431,20 @@ export function InlineNotice({
 export function CodeBlock({
   code,
   language = "text",
-  label = "Пример кода",
+  label,
 }: {
   code: string;
   language?: string;
   label?: string;
 }) {
-  const [status, setStatus] = useState("");
+  const { t } = useLanguage();
+  const [status, setStatus] = useState<"copied" | "failed">();
   async function copy() {
     try {
       await navigator.clipboard.writeText(code);
-      setStatus("Скопировано");
+      setStatus("copied");
     } catch {
-      setStatus("Не удалось скопировать. Выделите код вручную.");
+      setStatus("failed");
     }
   }
   return (
@@ -445,15 +452,15 @@ export function CodeBlock({
       <figcaption>
         <span>{language}</span>
         <button onClick={copy} type="button">
-          {status === "Скопировано" ? "Скопировано" : "Копировать"}
+          {status === "copied" ? t("copied") : t("copy")}
         </button>
       </figcaption>
-      <pre aria-label={label}>
+      <pre aria-label={label ?? t("codeExample")}>
         <code>{code}</code>
       </pre>
       {status && (
         <p className="ps-copy-status" role="status">
-          {status}
+          {t(status === "copied" ? "copied" : "copyFailed")}
         </p>
       )}
     </figure>
@@ -483,19 +490,20 @@ export function MediaFrame({
   state?: "ready" | "loading" | "error";
   onRetry?: () => void;
 }) {
+  const { t } = useLanguage();
   return (
     <figure className={`ps-media ps-media--${aspect}`}>
       <div className="ps-media-body">
         {state === "loading" ? (
           <p className="ps-media-status" role="status">
-            Загрузка демонстрации…
+            {t("loadingDemo")}
           </p>
         ) : state === "error" ? (
           <div className="ps-media-status" role="alert">
-            <p>Не удалось загрузить демонстрацию.</p>
+            <p>{t("demoLoadFailed")}</p>
             {onRetry && (
               <Button variant="quiet" onClick={onRetry}>
-                Попробовать снова
+                {t("retry")}
               </Button>
             )}
           </div>

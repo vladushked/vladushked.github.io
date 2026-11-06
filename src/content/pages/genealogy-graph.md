@@ -14,6 +14,8 @@ alt: Genealogy Graph: граф, маршрут родства, корни, пр�
 
 ::native-demo
 poster: https://raw.githubusercontent.com/vladushked/genealogy-graph-media/main/readme/screenshots/1-graph.png
+installHref: https://community.obsidian.md/plugins/genealogy-graph
+repositoryHref: https://github.com/vladushked/genealogy-graph
 ::
 
 ## От заметок к дереву

@@ -130,7 +130,12 @@ export type PageBlock =
   | SkillGroupBlock
   | PageFeedBlock
   | { type: "project-feed" }
-  | { type: "native-demo"; poster?: string };
+  | {
+      type: "native-demo";
+      poster?: string;
+      installHref?: string;
+      repositoryHref?: string;
+    };
 
 export type PageDefinition = {
   slug: string;
@@ -241,14 +246,24 @@ function buildDirectiveBlock(
   if (name === "media") return parseMediaDirective(bodyLines, slug, "Page");
   if (name === "project-feed") return { type: name };
   if (name === "native-demo") {
-    let poster: string | undefined;
+    const fields: {
+      poster?: string;
+      installHref?: string;
+      repositoryHref?: string;
+    } = {};
     for (const line of bodyLines.filter((line) => line.trim())) {
       const field = splitField(line.trim(), "Page", slug, name);
-      if (field.key !== "poster" || !sanitizeHref(field.value))
-        throw new Error(`Page "${slug}" has an invalid native-demo poster.`);
-      poster = sanitizeHref(field.value) || undefined;
+      if (
+        !["poster", "installHref", "repositoryHref"].includes(field.key) ||
+        !sanitizeHref(field.value)
+      )
+        throw new Error(
+          `Page "${slug}" has an invalid native-demo field "${field.key}".`,
+        );
+      fields[field.key as keyof typeof fields] =
+        sanitizeHref(field.value) || undefined;
     }
-    return { type: name, poster };
+    return { type: name, ...fields };
   }
   if (name === "hero") {
     return parseHeroDirective(bodyLines, slug);

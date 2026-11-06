@@ -5,7 +5,9 @@ import {
   socials,
 } from "../content/site";
 import { PersonalHome } from "./ui/PersonalHome";
+import { useLanguage } from "../i18n";
 export function HomePage() {
+  const { t } = useLanguage();
   const page = getPageBySlug("home");
   const identity = page?.blocks.find(
     (block): block is HeroBlock => block.type === "hero",
@@ -14,8 +16,8 @@ export function HomePage() {
   return (
     <div className="site-preview site-preview--home">
       <PersonalHome
-        name={identity.name}
-        subtitle={identity.title}
+        name={t("name")}
+        subtitle={t("role")}
         avatarSrc={identity.photo}
         aboutHref="/about"
         projectsHref="/projects"

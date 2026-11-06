@@ -7,6 +7,8 @@ import {
   type ListItem,
 } from "./primitives";
 import "./PersonalHome.css";
+import { useLanguage } from "../../i18n";
+import { LanguageSwitch } from "./LanguageSwitch";
 export type PersonalHomeProps = {
   name: string;
   subtitle?: string;
@@ -39,6 +41,7 @@ export function PersonalHome({
   onNavigate,
   animateEntrance = true,
 }: PersonalHomeProps) {
+  const { t } = useLanguage();
   const homeRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const home = homeRef.current;
@@ -46,7 +49,7 @@ export function PersonalHome({
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     if (media.matches) return;
     const rows = home.querySelectorAll<HTMLElement>(
-      ".ps-home-identity,.ps-home-section h2,.ps-content-list li,.ps-home-more,.ps-socials",
+      ".ps-home-identity,.ps-home-section h2,.ps-content-list li,.ps-home-more,.ps-home-footer",
     );
     const tokens = getComputedStyle(home);
     const milliseconds = (name: string, fallback: number) => {
@@ -111,10 +114,10 @@ export function PersonalHome({
           heading="h1"
         />
       </div>
-      <section className="ps-home-section" aria-label="projects">
+      <section className="ps-home-section" aria-label={t("projects")}>
         <h2>
           <TextLink href={projectsHref} onClick={visit("projects")}>
-            projects
+            {t("projects")}
           </TextLink>
         </h2>
         <div className="ps-home-subitems">
@@ -130,15 +133,15 @@ export function PersonalHome({
               onClick={visit("projects")}
               className="ps-home-more"
             >
-              далее
+              {t("more")}
             </TextLink>
           )}
         </div>
       </section>
-      <section className="ps-home-section" aria-label="blog">
+      <section className="ps-home-section" aria-label={t("blog")}>
         <h2>
           <TextLink href={blogHref} onClick={visit("blog")}>
-            blog
+            {t("blog")}
           </TextLink>
         </h2>
         <div className="ps-home-subitems">
@@ -155,19 +158,22 @@ export function PersonalHome({
               onClick={visit("blog")}
               className="ps-home-more"
             >
-              далее
+              {t("more")}
             </TextLink>
           )}
         </div>
       </section>
-      <section className="ps-home-section" aria-label="consult">
+      <section className="ps-home-section" aria-label={t("consult")}>
         <h2>
           <TextLink href={consultHref} onClick={visit("consult")}>
-            consult
+            {t("consult")}
           </TextLink>
         </h2>
       </section>
-      <SocialLinks items={socials} />
+      <div className="ps-home-footer">
+        <SocialLinks items={socials} />
+        <LanguageSwitch />
+      </div>
     </div>
   );
 }

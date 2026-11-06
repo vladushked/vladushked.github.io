@@ -1,9 +1,17 @@
 .gg-native {
+  --gg-toolbar-height: 60px;
   display: flex;
   flex-direction: column;
   position: relative;
   width: 100%;
-  height: 780px;
+  box-sizing: border-box;
+  height: min(
+    780px,
+    calc(
+      var(--gg-viewport-height, 100dvh) - 32px -
+        env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)
+    )
+  );
   min-width: 0;
   overflow: hidden;
   border: 1px solid #383838;
@@ -14,32 +22,33 @@
   color-scheme: dark;
 }
 .gg-native-toolbar {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(66px, 1fr) auto minmax(66px, 1fr);
   align-items: center;
-  gap: 12px;
   flex: none;
-  height: 44px;
+  height: var(--gg-toolbar-height);
   box-sizing: border-box;
-  padding: 4px 10px 4px 13px;
+  padding: 6px 8px;
   border-bottom: 1px solid #333;
   background: #242424;
   color: #b3b3b3;
   font: 11px/1.4 var(--ps-font, system-ui);
 }
-.gg-native-toolbar button {
+.gg-native-actions button {
   flex: none;
   border: 0;
   border-radius: 4px;
-  min-height: 36px;
-  padding: 4px 8px;
+  min-height: 44px;
+  padding: 4px;
   background: transparent;
   color: #dadada;
   font: inherit;
   cursor: pointer;
 }
-.gg-native-toolbar button:hover {
-  background: #333;
+@media (hover: hover) and (pointer: fine) {
+  .gg-native-actions button:hover {
+    background: #333;
+  }
 }
 .gg-native-frame {
   display: block;
@@ -63,7 +72,7 @@
 }
 .gg-native-cover {
   position: absolute;
-  inset: 44px 0 0;
+  inset: var(--gg-toolbar-height) 0 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -85,6 +94,8 @@
   outline-offset: 5px;
 }
 .gg-native-actions {
+  grid-column: 3;
+  justify-self: end;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -92,16 +103,14 @@
 .gg-native-actions button {
   display: grid;
   place-items: center;
-  width: 36px;
+  width: 32px;
 }
 .gg-native-toolbar .gg-native-exit {
-  padding-inline: 0;
-  background: none;
-}
-.gg-native-toolbar .gg-native-exit:hover {
-  background: none;
-  text-decoration: underline;
-  text-underline-offset: 3px;
+  grid-column: 2;
+  justify-self: center;
+  padding-inline: 10px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 .gg-native-toolbar button:focus-visible {
   outline: 2px solid #b8e89d;
@@ -112,7 +121,7 @@
 }
 .gg-native-loading {
   position: absolute;
-  inset: 44px 0 0;
+  inset: var(--gg-toolbar-height) 0 0;
   display: grid;
   align-content: center;
   justify-content: center;
@@ -122,16 +131,17 @@
   color: #b3b3b3;
   font: 13px/1.5 var(--ps-font, system-ui);
 }
-@media (max-width: 600px) {
-  .gg-native {
-    height: min(800px, calc(100dvh - 32px));
-    min-height: 600px;
-  }
-  .gg-native-toolbar {
-    font-size: 10px;
-    padding-inline: 8px;
-  }
-  .gg-native-toolbar button {
-    min-height: 36px;
+.gg-demo-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
+.gg-demo-links .ps-button {
+  text-align: center;
+}
+@media (max-width: 360px) {
+  .gg-native-toolbar .gg-native-exit {
+    padding-inline: 6px;
   }
 }

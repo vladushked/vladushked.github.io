@@ -1,6 +1,7 @@
 import { pages } from "./pages";
 import { posts, type PostDefinition } from "./posts";
 import type { ListItem, ListItemIcon } from "../components/ui/primitives";
+import type { Language } from "../i18n";
 export const socials = [
   { label: "GitHub", href: "https://github.com/vladushked" },
   { label: "Telegram", href: "https://t.me/vladislavplotnikov" },
@@ -20,7 +21,11 @@ export const projectItems: ListItem[] = pages
     tags: page.meta.projectTags,
     icon: projectIcon(page.meta.projectIcon),
   }));
-export function postListItem(post: PostDefinition, compact = false): ListItem {
+export function postListItem(
+  post: PostDefinition,
+  compact = false,
+  language: Language = "ru",
+): ListItem {
   return {
     id: post.slug,
     title: compact
@@ -29,7 +34,7 @@ export function postListItem(post: PostDefinition, compact = false): ListItem {
     href: post.route,
     tags: post.meta.tags,
     dateTime: post.meta.date,
-    date: new Intl.DateTimeFormat("ru-RU").format(
+    date: new Intl.DateTimeFormat(language === "en" ? "en-GB" : "ru-RU").format(
       new Date(post.meta.date + "T00:00:00Z"),
     ),
     icon: {

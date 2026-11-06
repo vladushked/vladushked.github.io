@@ -24,6 +24,8 @@ import { ButtonLink, ContentList, Identity, TextLink } from "./ui/primitives";
 import { TopicFilter } from "./ui/TopicFilter";
 import { CodeBlock } from "./ui/primitives";
 import { useArchiveTopics } from "./ArchiveState";
+import { topicLabel, useLanguage } from "../i18n";
+import { LanguageSwitch } from "./ui/LanguageSwitch";
 import {
   matchesTopics,
   postListItem,
@@ -31,6 +33,7 @@ import {
   topicOptions,
 } from "../content/site";
 const NativeDemo = lazy(() => import("./ui/ObsidianGraphDemo"));
+type Translate = ReturnType<typeof useLanguage>["t"];
 
 type HeroContactType = "phone" | "email" | "telegram";
 
@@ -54,6 +57,7 @@ const inlineTokenPattern =
   /(\[[^\]]+\]\([^)]+\)|\*\*.+?\*\*|`[^`]+`|\*[^*]+\*)/g;
 
 export function DocumentPage({ document }: { document: SiteDocument }) {
+  const { language, t } = useLanguage();
   if (document.kind === "page") {
     if (document.slug === "about") {
       const identity = document.page.blocks.find(
@@ -64,26 +68,27 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
       return (
         <div className="site-preview site-preview--home">
           <div className="ps-personal-home ps-about">
-            <nav className="page-back-links" aria-label="Возврат">
+            <nav className="page-back-links" aria-label={t("backNavigation")}>
               <Link to="/" className="site-back ps-link ps-link--muted">
                 <ArrowLeft size={14} aria-hidden="true" />
-                На главную
+                {t("home")}
               </Link>
+              <LanguageSwitch />
             </nav>
             <div className="ps-home-identity">
               <Identity
-                name={identity.name}
-                subtitle={identity.title}
+                name={t("name")}
+                subtitle={t("role")}
                 avatarSrc={identity.photo}
                 href="/about"
                 heading="h1"
               />
             </div>
-            <section className="ps-home-section" aria-label="Резюме">
+            <section className="ps-home-section" aria-label={t("resume")}>
               <h2>
                 {identity.actions.map((action) => (
                   <TextLink key={action.href} href={action.href}>
-                    {action.label}
+                    {t("resume")}
                   </TextLink>
                 ))}
               </h2>
@@ -95,10 +100,22 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
     const isBlog = document.page.blocks.some(
       (block) => block.type === "post-feed",
     );
+    const isArchive =
+      isBlog ||
+      document.page.blocks.some((block) => block.type === "project-feed");
     const hasHero = document.page.blocks.some((block) => block.type === "hero");
+    if (document.slug === "not-found") {
+      return (
+        <PageFrame title="404" description={t("pageNotFound")}>
+          <p>
+            <TextLink href="/">{t("notFoundHelp")}</TextLink>
+          </p>
+        </PageFrame>
+      );
+    }
     return (
       <PageFrame
-        title={isBlog ? "blog" : hasHero ? undefined : document.page.meta.title}
+        title={isArchive || hasHero ? undefined : document.page.meta.title}
         description={
           hasHero || isBlog ? undefined : document.page.meta.description
         }
@@ -106,22 +123,27 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
         {(isBlog
           ? document.page.blocks.filter((block) => block.type === "post-feed")
           : document.page.blocks
-        ).map((block, index) => renderPageBlock(block, index))}
+        ).map((block, index) => renderPageBlock(block, index, t))}
       </PageFrame>
     );
   }
   return (
     <PageFrame
       title={document.post.meta.title}
-      backLink={{ to: document.post.feedRoute, label: "Все публикации" }}
+      titleLanguage="ru"
+      backLink={{ to: document.post.feedRoute, label: t("allPosts") }}
       headerSupplement={
         <div className="post-meta">
           <time dateTime={document.post.meta.date}>
-            {new Intl.DateTimeFormat("ru-RU").format(
+            {new Intl.DateTimeFormat(language === "en" ? "en-GB" : "ru-RU").format(
               new Date(document.post.meta.date + "T00:00:00Z"),
             )}
           </time>
-          <span>{document.post.meta.tags.join(" · ")}</span>
+          <span>
+            {document.post.meta.tags
+              .map((tag) => topicLabel(tag, language))
+              .join(" · ")}
+          </span>
         </div>
       }
     >
@@ -138,32 +160,38 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
 }
 function PageFrame({
   title,
+  titleLanguage,
   description,
   backLink,
   headerSupplement,
   children,
 }: {
   title?: ReactNode;
+  titleLanguage?: "ru" | "en";
   description?: ReactNode;
   backLink?: { to: string; label: string };
   headerSupplement?: ReactNode;
   children: ReactNode;
 }) {
+  const { t } = useLanguage();
   return (
     <div className="site-preview">
       <article className="ps-article">
-        <nav className="page-back-links" aria-label="Возврат">
-          <Link to="/" className="site-back ps-link ps-link--muted">
-            <ArrowLeft size={14} aria-hidden="true" />
-            На главную
-          </Link>
-          {backLink && (
-            <Link to={backLink.to} className="site-back ps-link ps-link--muted">
-              {backLink.label}
+        <nav className="page-back-links" aria-label={t("backNavigation")}>
+          <div className="page-back-main">
+            <Link to="/" className="site-back ps-link ps-link--muted">
+              <ArrowLeft size={14} aria-hidden="true" />
+              {t("home")}
             </Link>
-          )}
+            {backLink && (
+              <Link to={backLink.to} className="site-back ps-link ps-link--muted">
+                {backLink.label}
+              </Link>
+            )}
+          </div>
+          <LanguageSwitch />
         </nav>
-        {title && <h1>{title}</h1>}
+        {title && <h1 lang={titleLanguage}>{title}</h1>}
         {description && <p className="document-description">{description}</p>}
         {headerSupplement}
         <div className="markdown-content">{children}</div>
@@ -172,13 +200,13 @@ function PageFrame({
   );
 }
 
-function renderPageBlock(block: PageBlock, index: number) {
+function renderPageBlock(block: PageBlock, index: number, t: Translate) {
   if (block.type === "media")
     return (
       <PostMediaSection
         key={`page-media-${index}`}
         block={block}
-        title={block.alt || "Медиа проекта"}
+        title={block.alt || t("projectMedia")}
       />
     );
   if (block.type === "project-feed")
@@ -189,11 +217,15 @@ function renderPageBlock(block: PageBlock, index: number) {
         <Suspense
           fallback={
             <p role="status" className="native-project-loading">
-              Загрузка интерактивного демо…
+              {t("loadingDemo")}
             </p>
           }
         >
-          <NativeDemo poster={block.poster} />
+          <NativeDemo
+            poster={block.poster}
+            installHref={block.installHref}
+            repositoryHref={block.repositoryHref}
+          />
         </Suspense>
       </figure>
     );
@@ -243,7 +275,7 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
         key={`${keyPrefix}-code-${index}`}
         code={block.code}
         language={block.language}
-        label={block.language || "Код"}
+        label={block.language}
       />
     );
   if (block.type === "heading") {
@@ -252,6 +284,7 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
         <h2
           key={`${keyPrefix}-block-${index}`}
           className="type-section-title markdown-section-title"
+          lang="ru"
         >
           {block.text}
         </h2>
@@ -259,7 +292,11 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
     }
 
     return (
-      <h3 key={`${keyPrefix}-block-${index}`} className="markdown-subheading">
+      <h3
+        key={`${keyPrefix}-block-${index}`}
+        className="markdown-subheading"
+        lang="ru"
+      >
         {block.text}
       </h3>
     );
@@ -270,6 +307,7 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
       <p
         key={`${keyPrefix}-block-${index}`}
         className="type-body markdown-paragraph"
+        lang="ru"
       >
         {renderInline(block.text, `${keyPrefix}-paragraph-${index}`)}
       </p>
@@ -278,7 +316,7 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
 
   if (block.type === "unordered-list") {
     return (
-      <ul key={`${keyPrefix}-block-${index}`} className="markdown-list">
+      <ul key={`${keyPrefix}-block-${index}`} className="markdown-list" lang="ru">
         {block.items.map((item, itemIndex) => (
           <li
             key={`${keyPrefix}-item-${index}-${itemIndex}`}
@@ -299,7 +337,7 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
 
   if (block.type === "ordered-list") {
     return (
-      <ol key={`${keyPrefix}-block-${index}`} className="markdown-list">
+      <ol key={`${keyPrefix}-block-${index}`} className="markdown-list" lang="ru">
         {block.items.map((item, itemIndex) => (
           <li
             key={`${keyPrefix}-item-${index}-${itemIndex}`}
@@ -318,17 +356,31 @@ function renderTextBlock(block: TextBlock, index: number, keyPrefix: string) {
   }
 
   return (
-    <blockquote key={`${keyPrefix}-block-${index}`} className="markdown-quote">
+    <blockquote
+      key={`${keyPrefix}-block-${index}`}
+      className="markdown-quote"
+      lang="ru"
+    >
       {renderInline(block.text, `${keyPrefix}-quote-${index}`)}
     </blockquote>
   );
 }
 
 function HeroSection({ block }: { block: HeroBlock }) {
+  const { language, t } = useLanguage();
+  const name =
+    block.name === "Владислав Плотников"
+      ? t("name")
+      : block.name === "Консультации по робототехнике"
+        ? t("roboticsConsulting")
+        : block.name;
   const actions = block.actions.length ? (
-    <div className="hero-action-list">
+    <div className="hero-action-list" lang={language}>
       {block.actions.map((action, index) =>
-        renderHeroAction(action, `${action.href}-${index}`),
+        renderHeroAction(
+          { ...action, label: actionLabel(action.label, t) },
+          `${action.href}-${index}`,
+        ),
       )}
     </div>
   ) : null;
@@ -358,6 +410,7 @@ function HeroSection({ block }: { block: HeroBlock }) {
 
   return (
     <section
+      lang="ru"
       className={`card card-fill-${block.fill} card-stroke-${block.stroke} card-heading-${block.headingVariant} ${
         block.photo
           ? `hero-card hero-card-with-photo hero-card-photo-layout-${block.photoLayout}`
@@ -368,13 +421,15 @@ function HeroSection({ block }: { block: HeroBlock }) {
         <div
           className={`hero-card-media hero-card-media-size-${block.imageSize} hero-card-media-banner`}
         >
-          <img src={block.photo} alt={block.name} className="hero-card-image" />
+          <img src={block.photo} alt={name} className="hero-card-image" />
         </div>
       ) : null}
 
       <div className="card-stack hero-card-content">
         <div className="card-stack-tight">
-          <h1 className="card-heading card-heading-page">{block.name}</h1>
+          <h1 className="card-heading card-heading-page" lang={language}>
+            {name}
+          </h1>
           {block.title ? (
             <p className="card-title">
               {renderInline(block.title, `${block.name}-title`)}
@@ -428,7 +483,7 @@ function HeroSection({ block }: { block: HeroBlock }) {
         <div
           className={`hero-card-media hero-card-media-size-${block.imageSize}`}
         >
-          <img src={block.photo} alt={block.name} className="hero-card-image" />
+          <img src={block.photo} alt={name} className="hero-card-image" />
         </div>
       ) : null}
     </section>
@@ -470,6 +525,7 @@ function BaseCard({
   collapseBullets = false,
   footer,
 }: BaseCardProps) {
+  const { language, t } = useLanguage();
   const bulletList = bullets.length ? (
     <ul className="markdown-list">
       {bullets.map((item, itemIndex) => (
@@ -482,6 +538,7 @@ function BaseCard({
   ) : null;
   return (
     <section
+      lang="ru"
       className={`card card-fill-${fill} card-stroke-${stroke} card-heading-${headingVariant}`}
     >
       <div className="card-stack">
@@ -530,9 +587,9 @@ function BaseCard({
 
         {collapseBullets && bulletList ? (
           <details className="experience-details">
-            <summary>
+            <summary lang={language}>
               <ChevronRight size={15} aria-hidden="true" />
-              Подробнее об опыте
+              {t("experienceDetails")}
             </summary>
             {bulletList}
           </details>
@@ -546,7 +603,7 @@ function BaseCard({
 
 function SkillGroupSection({ block }: { block: SkillGroupBlock }) {
   return (
-    <section className="skill-group">
+    <section className="skill-group" lang="ru">
       <p className="type-eyebrow">{block.title}</p>
       <div className="chip-list">
         {block.skills.map((skill, index) => (
@@ -567,14 +624,16 @@ function SkillGroupSection({ block }: { block: SkillGroupBlock }) {
 }
 
 function PostFeedSection({ feed }: { feed: string }) {
+  const { language, t } = useLanguage();
   const items = posts
     .filter((post) => post.meta.feed === feed)
-    .map((post) => postListItem(post));
+    .map((post) => postListItem(post, false, language));
   const [selected, setSelected] = useArchiveTopics(feed);
   const visible = items.filter((item) => matchesTopics(item, selected));
   return (
     <section className="post-feed">
       <TopicFilter
+        title={t("blog")}
         options={topicOptions(items)}
         value={selected}
         onValueChange={setSelected}
@@ -584,17 +643,19 @@ function PostFeedSection({ feed }: { feed: string }) {
       <ContentList
         items={visible}
         variant="posts"
-        empty="По этим темам пока ничего нет."
+        empty={t("emptyTopics")}
       />
     </section>
   );
 }
 function ProjectFeedSection() {
+  const { t } = useLanguage();
   const [selected, setSelected] = useArchiveTopics("projects");
   const visible = projectItems.filter((item) => matchesTopics(item, selected));
   return (
     <section className="post-feed">
       <TopicFilter
+        title={t("projects")}
         options={topicOptions(projectItems)}
         value={selected}
         onValueChange={setSelected}
@@ -604,7 +665,7 @@ function ProjectFeedSection() {
       <ContentList
         items={visible}
         variant="projects"
-        empty="По этим темам пока ничего нет."
+        empty={t("emptyTopics")}
       />
     </section>
   );
@@ -619,6 +680,7 @@ function PostMediaSection({
   title: string;
   thumbnailUrl?: string;
 }) {
+  const { t } = useLanguage();
   if (block.kind === "image") {
     return (
       <figure className="post-detail-media">
@@ -628,7 +690,7 @@ function PostMediaSection({
           className="post-detail-image"
         />
         {block.caption ? (
-          <figcaption className="post-media-caption">
+          <figcaption className="post-media-caption" lang="ru">
             {block.caption}
           </figcaption>
         ) : null}
@@ -644,7 +706,7 @@ function PostMediaSection({
           target="_blank"
           rel="noopener noreferrer"
           className="post-detail-video-preview"
-          aria-label={`Открыть видео "${title}"`}
+          aria-label={`${t("openVideo")}: ${title}`}
         >
           <img
             src={thumbnailUrl}
@@ -653,11 +715,11 @@ function PostMediaSection({
           />
           <span className="post-detail-video-overlay" aria-hidden="true">
             <PlayCircle size={40} strokeWidth={1.7} />
-            <span className="post-detail-media-label">Видео</span>
+            <span className="post-detail-media-label">{t("video")}</span>
           </span>
         </a>
         {block.caption ? (
-          <figcaption className="post-media-caption">
+          <figcaption className="post-media-caption" lang="ru">
             {block.caption}
           </figcaption>
         ) : null}
@@ -674,10 +736,12 @@ function PostMediaSection({
         className="post-detail-video-link"
       >
         <PlayCircle size={40} strokeWidth={1.7} />
-        <span>Открыть видео</span>
+        <span>{t("openVideo")}</span>
       </a>
       {block.caption ? (
-        <p className="post-media-caption">{block.caption}</p>
+        <p className="post-media-caption" lang="ru">
+          {block.caption}
+        </p>
       ) : null}
     </section>
   );
@@ -777,6 +841,14 @@ function getContactIcon(type: HeroContactType) {
   }
 
   return Send;
+}
+
+function actionLabel(label: string, t: Translate) {
+  if (label === "Написать в Telegram") return t("messageTelegram");
+  if (label === "Посмотреть опыт") return t("viewExperience");
+  if (label === "Перейти в канал") return t("visitChannel");
+  if (label === "cv") return t("resume");
+  return label;
 }
 
 function renderHeroAction(action: HeroBlock["actions"][number], key: string) {

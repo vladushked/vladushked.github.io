@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "react";
 import {
   useLocation,
   useNavigate,
@@ -8,10 +8,13 @@ import {
 import { LivingBackground } from "./ui/LivingBackground";
 import { PageTransition } from "./ui/PageTransition";
 import { ArchiveProvider, type ArchiveSelections } from "./ArchiveState";
+import { useLanguage } from "../i18n";
+import { siteDocuments } from "../content/documents";
 
 const enterSelector =
-  ".ps-home-identity,.ps-home-section h2,.ps-home-section .ps-content-list li,.ps-home-more,.ps-personal-home>.ps-socials,.page-back-links,.ps-article>h1,.ps-article>.document-description,.post-meta,.markdown-content>p,.markdown-content>h2,.markdown-content>h3,.markdown-content>ul>li,.markdown-content>ol>li,.markdown-content>figure,.markdown-content>.card,.markdown-content>.skill-group,.post-feed>.ps-topic-filter,.post-feed>.ps-content-list>li";
+  ".ps-home-identity,.ps-home-section h2,.ps-home-section .ps-content-list li,.ps-home-more,.ps-home-footer,.page-back-links,.ps-article>h1,.ps-article>.document-description,.post-meta,.markdown-content>p,.markdown-content>h2,.markdown-content>h3,.markdown-content>ul>li,.markdown-content>ol>li,.markdown-content>figure,.markdown-content>.card,.markdown-content>.skill-group,.post-feed>.ps-topic-filter,.post-feed>.ps-content-list>li";
 export function Layout() {
+  const { t } = useLanguage();
   const location = useLocation(),
     navigationType = useNavigationType(),
     navigate = useNavigate(),
@@ -27,6 +30,22 @@ export function Layout() {
   useLayoutEffect(() => {
     mounted.current = true;
   }, []);
+  useEffect(() => {
+    const current = siteDocuments.find((item) => item.route === location.pathname);
+    const sections: Record<string, string> = {
+      "/blog": t("blog"),
+      "/projects": t("projects"),
+      "/resume": t("resume"),
+      "/consult": t("consult"),
+    };
+    let section = "";
+    if (current?.kind === "post") section = current.post.meta.title;
+    else if (!current) section = t("pageNotFound");
+    else if (!["home", "about"].includes(current.slug)) {
+      section = sections[location.pathname] ?? current.page.meta.title ?? "";
+    }
+    document.title = section ? `${section} · ${t("name")}` : t("name");
+  }, [location.pathname, t]);
   function intercept(event: MouseEvent<HTMLDivElement>) {
     if (
       event.defaultPrevented ||
@@ -79,7 +98,7 @@ export function Layout() {
               ?.focus({ preventScroll: true });
           }}
         >
-          К содержимому
+          {t("skipContent")}
         </a>
         <main id="main-content" tabIndex={-1}>
           <ArchiveProvider

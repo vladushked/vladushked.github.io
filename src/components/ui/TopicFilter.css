@@ -1,10 +1,34 @@
 .ps-topic-filter {
-  margin-bottom: 28px;
+  margin-bottom: 22px;
+}
+.ps-archive-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+.ps-article .ps-archive-title {
+  margin: 0;
+}
+.ps-topic-filter-toggle {
+  flex: none;
+  min-height: 44px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ps-muted);
+  font: 400 12px / 1.3 var(--ps-font);
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
 }
 .ps-topic-filter-options {
   display: flex;
   flex-wrap: wrap;
   gap: 2px 16px;
+  margin-top: 12px;
+}
+.ps-topic-filter-options[hidden] {
+  display: none;
 }
 .ps-topic-filter-option {
   min-height: 36px;
@@ -26,9 +50,7 @@
   text-decoration: underline;
 }
 .ps-topic-filter-status {
-  margin-top: 8px !important;
-  padding-top: 2px;
-  border-top: 1px solid var(--ps-line);
+  margin-top: 2px !important;
 }
 @media (hover: hover) and (pointer: fine) {
   .ps-topic-filter-option:hover {
