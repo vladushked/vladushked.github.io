@@ -107,10 +107,11 @@
   letter-spacing: -0.035em;
   line-height: 1.2;
 }
-.ps-identity-subtitle {
-  font-size: 13px;
-  line-height: 1.3;
+.ps-caption {
+  font: 400 12px / 1.3 var(--ps-font);
   color: var(--ps-muted);
+}
+.ps-identity-subtitle {
   margin-top: 2px !important;
 }
 .ps-identity--compact {
@@ -132,10 +133,19 @@
   gap: 25px;
 }
 .ps-content-list-title {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  align-items: baseline;
+  display: block;
+}
+.ps-content-list > li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+.ps-content-list--markers > li {
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 8px;
+}
+.ps-content-list-body {
+  grid-column: -2 / -1;
+  min-width: 0;
 }
 .ps-content-list-title > a {
   font-size: var(--ps-body-size);
@@ -144,6 +154,8 @@
   color: var(--ps-muted);
 }
 .ps-content-list time {
+  display: block;
+  margin-top: 8px;
   font-family: var(--ps-mono);
   font-size: 11px;
   white-space: nowrap;
@@ -165,6 +177,10 @@
 .ps-content-list--compact {
   gap: 3px;
 }
+.ps-content-list--compact.ps-content-list--markers > li {
+  grid-template-columns: 1em minmax(0, 1fr);
+  column-gap: 0.45em;
+}
 .ps-content-list--compact .ps-content-list-title > a {
   font-size: var(--ps-body-size);
   letter-spacing: 0;
@@ -178,8 +194,10 @@
 .ps-content-list-title > a.ps-content-list-link {
   display: inline-flex;
   align-items: baseline;
-  gap: 0.45em;
   min-width: 0;
+}
+.ps-content-list > li > .ps-list-icon {
+  margin-top: 0.3em;
 }
 .ps-content-list-label {
   min-width: 0;
@@ -321,6 +339,13 @@
 .ps-article li {
   margin: 7px 0;
 }
+.ps-article .ps-content-list {
+  padding: 0;
+  margin: 0;
+}
+.ps-article .ps-content-list > li {
+  margin: 0;
+}
 .ps-article blockquote {
   padding: 20px 24px;
   background: var(--ps-hover);
@@ -409,9 +434,6 @@
 .ps-personal-home > .ps-socials {
   margin-top: 40px;
 }
-.ps-personal-home .ps-identity-subtitle {
-  font-size: 12px;
-}
 @media (max-width: 600px) {
   .ps-identity {
     gap: 14px;
@@ -425,13 +447,6 @@
   }
   .ps-surface {
     padding: 22px;
-  }
-  .ps-content-list-title {
-    display: block;
-  }
-  .ps-content-list time {
-    display: block;
-    margin-top: 8px;
   }
   .ps-article h1 {
     font-size: 28px;

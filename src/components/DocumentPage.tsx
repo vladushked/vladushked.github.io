@@ -579,7 +579,7 @@ function PostFeedSection({ feed }: { feed: string }) {
         value={selected}
         onValueChange={setSelected}
         resultCount={visible.length}
-        totalCount={items.length}
+        countNoun="posts"
       />
       <ContentList
         items={visible}
@@ -599,7 +599,7 @@ function ProjectFeedSection() {
         value={selected}
         onValueChange={setSelected}
         resultCount={visible.length}
-        totalCount={projectItems.length}
+        countNoun="projects"
       />
       <ContentList
         items={visible}

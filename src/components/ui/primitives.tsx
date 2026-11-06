@@ -272,7 +272,7 @@ export function Identity({
             {name}
           </TextLink>
         </Name>
-        {subtitle && <p className="ps-identity-subtitle">{subtitle}</p>}
+        {subtitle && <p className="ps-identity-subtitle ps-caption">{subtitle}</p>}
       </div>
     </div>
   );
@@ -327,43 +327,45 @@ export function ContentList({
 }) {
   return items.length ? (
     <ul
-      className={`ps-content-list ps-content-list--${variant}${compact ? " ps-content-list--compact" : ""}`}
+      className={`ps-content-list ps-content-list--${variant}${compact ? " ps-content-list--compact" : ""}${items.some((item) => item.icon) ? " ps-content-list--markers" : ""}`}
     >
       {items.map((item) => (
         <li key={item.id}>
-          <div className="ps-content-list-title">
-            <TextLink
-              href={item.href}
-              className="ps-content-list-link"
-              tone={compact ? "muted" : "default"}
-              onClick={
-                onNavigate
-                  ? (event) => {
-                      if (
-                        event.button !== 0 ||
-                        event.metaKey ||
-                        event.ctrlKey ||
-                        event.altKey ||
-                        event.shiftKey
-                      )
-                        return;
-                      event.preventDefault();
-                      onNavigate(item.id);
-                    }
-                  : undefined
-              }
-            >
-              <ListItemIconView icon={item.icon} />
-              <span className="ps-content-list-label">{item.title}</span>
-            </TextLink>
-            {!compact && item.date && (
-              <time dateTime={item.dateTime}>{item.date}</time>
+          {item.icon && <ListItemIconView icon={item.icon} />}
+          <div className="ps-content-list-body">
+            <div className="ps-content-list-title">
+              <TextLink
+                href={item.href}
+                className="ps-content-list-link"
+                tone={compact ? "muted" : "default"}
+                onClick={
+                  onNavigate
+                    ? (event) => {
+                        if (
+                          event.button !== 0 ||
+                          event.metaKey ||
+                          event.ctrlKey ||
+                          event.altKey ||
+                          event.shiftKey
+                        )
+                          return;
+                        event.preventDefault();
+                        onNavigate(item.id);
+                      }
+                    : undefined
+                }
+              >
+                <span className="ps-content-list-label">{item.title}</span>
+              </TextLink>
+              {!compact && item.date && (
+                <time dateTime={item.dateTime}>{item.date}</time>
+              )}
+            </div>
+            {!compact && item.description && <p>{item.description}</p>}
+            {!compact && item.meta && (
+              <span className="ps-list-meta">{item.meta}</span>
             )}
           </div>
-          {!compact && item.description && <p>{item.description}</p>}
-          {!compact && item.meta && (
-            <span className="ps-list-meta">{item.meta}</span>
-          )}
         </li>
       ))}
     </ul>

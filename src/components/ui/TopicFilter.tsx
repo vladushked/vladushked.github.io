@@ -6,8 +6,14 @@ export interface TopicFilterProps {
   onValueChange: (value: string[]) => void;
   label?: string;
   resultCount?: number;
-  totalCount?: number;
+  countNoun: "posts" | "projects";
 }
+
+const countForms = {
+  posts: { one: "публикация", few: "публикации", many: "публикаций" },
+  projects: { one: "проект", few: "проекта", many: "проектов" },
+};
+const pluralRules = new Intl.PluralRules("ru");
 
 /** Controlled OR selection. Empty selection includes every topic. */
 export function TopicFilter({
@@ -16,8 +22,13 @@ export function TopicFilter({
   onValueChange,
   label = "Фильтр по темам",
   resultCount,
-  totalCount,
+  countNoun,
 }: TopicFilterProps) {
+  const forms = countForms[countNoun];
+  const countWord =
+    resultCount === undefined
+      ? ""
+      : forms[pluralRules.select(resultCount) as keyof typeof forms] ?? forms.many;
   const topics = [...new Set(options)];
   const toggle = (topic: string) =>
     onValueChange(
@@ -50,9 +61,12 @@ export function TopicFilter({
         ))}
       </div>
       {resultCount !== undefined && (
-        <p className="ps-topic-filter-status" role="status" aria-atomic="true">
-          Найдено: {resultCount}
-          {totalCount !== undefined ? ` из ${totalCount}` : ""}
+        <p
+          className="ps-topic-filter-status ps-caption"
+          role="status"
+          aria-atomic="true"
+        >
+          {resultCount} {countWord}
         </p>
       )}
     </div>

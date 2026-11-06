@@ -26,9 +26,9 @@
   text-decoration: underline;
 }
 .ps-topic-filter-status {
-  margin-top: 12px !important;
-  color: var(--ps-muted);
-  font: 11px/1.5 var(--ps-mono);
+  margin-top: 8px !important;
+  padding-top: 2px;
+  border-top: 1px solid var(--ps-line);
 }
 @media (hover: hover) and (pointer: fine) {
   .ps-topic-filter-option:hover {
