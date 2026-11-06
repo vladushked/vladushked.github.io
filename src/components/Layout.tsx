@@ -12,7 +12,7 @@ import { useLanguage } from "../i18n";
 import { siteDocuments } from "../content/documents";
 
 const enterSelector =
-  ".ps-home-identity,.ps-home-section h2,.ps-home-section .ps-content-list li,.ps-home-more,.ps-home-footer,.page-back-links,.ps-article>h1,.ps-article>.document-description,.post-meta,.markdown-content>p,.markdown-content>h2,.markdown-content>h3,.markdown-content>ul>li,.markdown-content>ol>li,.markdown-content>figure,.markdown-content>.card,.markdown-content>.skill-group,.post-feed>.ps-topic-filter,.post-feed>.ps-content-list>li";
+  ".ps-home-identity,.ps-home-section :is(h1,h2),.ps-home-section .ps-content-list li,.ps-home-more,.ps-home-footer,.page-back-links,.ps-article>h1,.ps-article>.document-description,.post-meta,.markdown-content>p,.markdown-content>h2,.markdown-content>h3,.markdown-content>ul>li,.markdown-content>ol>li,.markdown-content>figure,.markdown-content>.card,.markdown-content>.skill-group,.post-feed>.ps-topic-filter,.post-feed>.ps-content-list>li";
 export function Layout() {
   const { t } = useLanguage();
   const location = useLocation(),

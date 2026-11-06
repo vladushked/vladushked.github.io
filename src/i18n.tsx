@@ -12,86 +12,101 @@ export type Language = "ru" | "en";
 const messages = {
   ru: {
     name: "Владислав Плотников",
-    role: "Техлид в робототехнике",
-    projects: "Проекты",
-    blog: "Блог",
-    consult: "Консультации",
-    resume: "Резюме",
-    more: "далее",
-    home: "На главную",
-    allPosts: "Все публикации",
-    backNavigation: "Навигация назад",
-    skipContent: "К содержимому",
-    language: "Язык интерфейса",
-    socialLinks: "Контакты",
+    role: "техлид в робототехнике",
+    projects: "проекты",
+    blog: "блог",
+    consult: "консультации",
+    resume: "резюме",
+    more: "ещё",
+    home: "на главную",
+    allPosts: "все публикации",
+    backNavigation: "навигация назад",
+    skipContent: "к содержимому",
+    language: "язык интерфейса",
+    socialLinks: "контакты",
     email: "почта",
-    aboutAuthor: "Об авторе",
-    filters: "Фильтры",
-    topicFilter: "Фильтр по темам",
-    all: "Все",
-    emptyTopics: "По этим темам пока ничего нет.",
-    emptyPosts: "Здесь пока нет публикаций.",
-    experienceDetails: "Подробнее об опыте",
-    messageTelegram: "Написать в Telegram",
-    viewExperience: "Посмотреть опыт",
-    visitChannel: "Перейти в канал",
-    roboticsConsulting: "Консультации по робототехнике",
-    pageNotFound: "Страница не найдена.",
-    notFoundHelp: "Вернуться на главную страницу",
-    loadingDemo: "Загрузка интерактивного демо…",
-    demoLoadFailed: "Не удалось загрузить демонстрацию.",
-    retry: "Попробовать снова",
-    projectMedia: "Медиа проекта",
-    video: "Видео",
-    openVideo: "Открыть видео",
-    codeExample: "Пример кода",
-    copy: "Копировать",
-    copied: "Скопировано",
-    copyFailed: "Не удалось скопировать. Выделите код вручную.",
+    aboutAuthor: "об авторе",
+    filters: "фильтры",
+    topicFilter: "фильтр по темам",
+    all: "все",
+    emptyTopics: "по этим темам пока ничего нет.",
+    emptyPosts: "здесь пока нет публикаций.",
+    experienceDetails: "подробнее об опыте",
+    messageTelegram: "написать в telegram",
+    viewExperience: "посмотреть опыт",
+    visitChannel: "перейти в канал",
+    roboticsConsulting: "консультации по робототехнике",
+    pageNotFound: "страница не найдена.",
+    notFoundHelp: "вернуться на главную страницу",
+    loadingDemo: "загрузка интерактивного демо…",
+    demoLoadFailed: "не удалось загрузить демонстрацию.",
+    retry: "попробовать снова",
+    projectMedia: "медиа проекта",
+    video: "видео",
+    openVideo: "открыть видео",
+    codeExample: "пример кода",
+    copy: "копировать",
+    copied: "скопировано",
+    copyFailed: "не удалось скопировать. выделите код вручную.",
   },
   en: {
     name: "Vladislav Plotnikov",
-    role: "Robotics Tech Lead",
-    projects: "Projects",
-    blog: "Blog",
-    consult: "Consulting",
-    resume: "CV",
+    role: "robotics tech lead",
+    projects: "projects",
+    blog: "blog",
+    consult: "consulting",
+    resume: "cv",
     more: "more",
-    home: "Home",
-    allPosts: "All posts",
-    backNavigation: "Back navigation",
-    skipContent: "Skip to content",
-    language: "Interface language",
-    socialLinks: "Contact links",
+    home: "home",
+    allPosts: "all posts",
+    backNavigation: "back navigation",
+    skipContent: "skip to content",
+    language: "interface language",
+    socialLinks: "contact links",
     email: "email",
-    aboutAuthor: "About the author",
-    filters: "Filters",
-    topicFilter: "Filter by topic",
-    all: "All",
-    emptyTopics: "No items match these topics yet.",
-    emptyPosts: "No posts yet.",
-    experienceDetails: "More about this role",
-    messageTelegram: "Message on Telegram",
-    viewExperience: "View experience",
-    visitChannel: "Visit the channel",
-    roboticsConsulting: "Robotics consulting",
-    pageNotFound: "Page not found.",
-    notFoundHelp: "Return to the homepage",
-    loadingDemo: "Loading the interactive demo…",
-    demoLoadFailed: "The demo could not be loaded.",
-    retry: "Try again",
-    projectMedia: "Project media",
-    video: "Video",
-    openVideo: "Open video",
-    codeExample: "Code example",
-    copy: "Copy",
-    copied: "Copied",
-    copyFailed: "Could not copy. Select the code manually.",
+    aboutAuthor: "about the author",
+    filters: "filters",
+    topicFilter: "filter by topic",
+    all: "all",
+    emptyTopics: "no items match these topics yet.",
+    emptyPosts: "no posts yet.",
+    experienceDetails: "more about this role",
+    messageTelegram: "message on telegram",
+    viewExperience: "view experience",
+    visitChannel: "visit the channel",
+    roboticsConsulting: "robotics consulting",
+    pageNotFound: "page not found.",
+    notFoundHelp: "return to the homepage",
+    loadingDemo: "loading the interactive demo…",
+    demoLoadFailed: "the demo could not be loaded.",
+    retry: "try again",
+    projectMedia: "project media",
+    video: "video",
+    openVideo: "open video",
+    codeExample: "code example",
+    copy: "copy",
+    copied: "copied",
+    copyFailed: "could not copy. select the code manually.",
   },
 } as const;
 
 type MessageKey = keyof typeof messages.ru;
-const STORAGE_KEY = "site-language";
+const STORAGE_KEY = "site-language-override";
+
+function initialLanguage(): Language {
+  const preferred =
+    typeof navigator === "undefined"
+      ? "en"
+      : navigator.languages?.[0] || navigator.language || "en";
+  const system = preferred.toLowerCase().startsWith("ru") ? "ru" : "en";
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved === "ru" || saved === "en") return saved;
+  } catch {
+    // Browser language still applies when storage is unavailable.
+  }
+  return system;
+}
 const LanguageContext = createContext({
   language: "ru" as Language,
   setLanguage: (_language: Language) => {},
@@ -99,25 +114,21 @@ const LanguageContext = createContext({
 });
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [language, setLanguage] = useState<Language>(() => {
-    try {
-      return localStorage.getItem(STORAGE_KEY) === "en" ? "en" : "ru";
-    } catch {
-      return "ru";
-    }
-  });
+  const [language, changeLanguage] = useState<Language>(initialLanguage);
   useEffect(() => {
     document.documentElement.lang = language;
-    try {
-      localStorage.setItem(STORAGE_KEY, language);
-    } catch {
-      // The current selection still works when browser storage is unavailable.
-    }
   }, [language]);
   const value = useMemo(
     () => ({
       language,
-      setLanguage,
+      setLanguage: (nextLanguage: Language) => {
+        changeLanguage(nextLanguage);
+        try {
+          localStorage.setItem(STORAGE_KEY, nextLanguage);
+        } catch {
+          // The explicit selection still works for the current visit.
+        }
+      },
       t: (key: MessageKey): string => messages[language][key],
     }),
     [language],
@@ -134,12 +145,12 @@ export function useLanguage() {
 }
 
 const topicLabels: Record<string, { ru: string; en: string }> = {
-  выступление: { ru: "выступление", en: "Talks" },
-  соревнование: { ru: "соревнование", en: "Competitions" },
-  родословная: { ru: "родословная", en: "Genealogy" },
+  выступление: { ru: "выступление", en: "talks" },
+  соревнование: { ru: "соревнование", en: "competitions" },
+  родословная: { ru: "родословная", en: "genealogy" },
 };
 export function topicLabel(topic: string, language: Language) {
-  return topicLabels[topic]?.[language] ?? topic;
+  return topicLabels[topic]?.[language] ?? topic.toLocaleLowerCase(language);
 }
 
 const countForms = {

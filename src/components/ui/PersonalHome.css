@@ -21,7 +21,7 @@
   width: fit-content;
   max-width: 100%;
 }
-.ps-personal-home .ps-home-section h2 .ps-link {
+.ps-personal-home .ps-home-section :is(h1, h2) .ps-link {
   display: inline-block;
 }
 .ps-personal-home .ps-home-section .ps-link::before {
@@ -36,7 +36,7 @@
   transition: transform 300ms var(--ps-ease);
   pointer-events: none;
 }
-.ps-personal-home .ps-home-section h2 .ps-link::before {
+.ps-personal-home .ps-home-section :is(h1, h2) .ps-link::before {
   bottom: -3px;
 }
 .ps-personal-home .ps-home-section .ps-link::after {

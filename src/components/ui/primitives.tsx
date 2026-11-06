@@ -395,7 +395,7 @@ export function SocialLinks({
           tone="muted"
           external={!item.href.startsWith("mailto:")}
         >
-          {item.label === "email" ? t("email") : item.label}
+          {item.label === "email" ? t("email") : item.label.toLowerCase()}
         </TextLink>
       ))}
     </nav>

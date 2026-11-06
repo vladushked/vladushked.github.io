@@ -20,7 +20,7 @@ import type {
 } from "../content/pages";
 import type { PostBlock, PostMediaBlock } from "../content/posts";
 import { sanitizeHref, type TextBlock } from "../content/sharedMarkdown";
-import { ButtonLink, ContentList, Identity, TextLink } from "./ui/primitives";
+import { ButtonLink, ContentList, TextLink } from "./ui/primitives";
 import { TopicFilter } from "./ui/TopicFilter";
 import { CodeBlock } from "./ui/primitives";
 import { useArchiveTopics } from "./ArchiveState";
@@ -60,11 +60,6 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
   const { language, t } = useLanguage();
   if (document.kind === "page") {
     if (document.slug === "about") {
-      const identity = document.page.blocks.find(
-        (block): block is HeroBlock => block.type === "hero",
-      );
-      if (!identity)
-        throw Error("About page requires a Markdown identity block.");
       return (
         <div className="site-preview site-preview--home">
           <div className="ps-personal-home ps-about">
@@ -75,23 +70,10 @@ export function DocumentPage({ document }: { document: SiteDocument }) {
               </Link>
               <LanguageSwitch />
             </nav>
-            <div className="ps-home-identity">
-              <Identity
-                name={t("name")}
-                subtitle={t("role")}
-                avatarSrc={identity.photo}
-                href="/about"
-                heading="h1"
-              />
-            </div>
             <section className="ps-home-section" aria-label={t("resume")}>
-              <h2>
-                {identity.actions.map((action) => (
-                  <TextLink key={action.href} href={action.href}>
-                    {t("resume")}
-                  </TextLink>
-                ))}
-              </h2>
+              <h1>
+                <TextLink href="/resume">{t("resume")}</TextLink>
+              </h1>
             </section>
           </div>
         </div>

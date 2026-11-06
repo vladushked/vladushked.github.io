@@ -418,7 +418,7 @@
 .ps-home-section {
   margin-top: 28px;
 }
-.ps-home-section h2 {
+.ps-home-section :is(h1, h2) {
   font-size: 16px;
   font-weight: 500;
   font-family: var(--ps-mono);
@@ -449,12 +449,10 @@
   gap: 8px 20px;
 }
 .ps-language-switch {
-  display: flex;
+  display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 8px;
-}
-.ps-language-switch button {
+  justify-content: center;
   padding: 0;
   min-width: 24px;
   min-height: 44px;
@@ -464,10 +462,6 @@
   color: var(--ps-muted);
   font: 400 11px / 1.3 var(--ps-font);
   text-underline-offset: 0.25em;
-}
-.ps-language-switch button[aria-pressed="true"] {
-  color: var(--ps-text);
-  text-decoration: underline;
 }
 @media (max-width: 600px) {
   .ps-identity {

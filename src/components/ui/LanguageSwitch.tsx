@@ -1,21 +1,17 @@
 import { useLanguage } from "../../i18n";
 
 export function LanguageSwitch() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
+  const target = language === "ru" ? "en" : "ru";
   return (
-    <div className="ps-language-switch" role="group" aria-label={t("language")}>
-      {(["ru", "en"] as const).map((option) => (
-        <button
-          key={option}
-          type="button"
-          lang={option}
-          aria-label={option === "ru" ? "Русский" : "English"}
-          aria-pressed={language === option}
-          onClick={() => setLanguage(option)}
-        >
-          {option.toUpperCase()}
-        </button>
-      ))}
-    </div>
+    <button
+      className="ps-language-switch"
+      type="button"
+      lang={target}
+      aria-label={target === "en" ? "switch to english" : "переключить на русский"}
+      onClick={() => setLanguage(target)}
+    >
+      {target === "en" ? "en" : "ру"}
+    </button>
   );
 }

@@ -450,7 +450,7 @@ h1.card-heading-page {
   }
   .site-preview--home .ps-content-list--compact .ps-content-list-title > a,
   .site-preview--home .ps-socials a,
-  .site-preview--home .ps-language-switch button {
+  .site-preview--home .ps-language-switch {
     min-height: 32px;
   }
   .site-preview--home .ps-home-footer {

@@ -16,27 +16,27 @@ const copy = {
   ru: {
     label: "Genealogy Graph: полный интерфейс плагина",
     frame: "Genealogy Graph — исходный интерфейс плагина с вымышленной семьёй",
-    open: "Открыть демо",
-    exit: "Выйти из демо",
-    settings: "Настройки учебного хранилища",
-    reset: "Сбросить учебные данные",
-    loading: "Загрузка интерфейса Genealogy Graph…",
-    failure: "Не удалось открыть демо.",
-    retry: "Повторить",
-    install: "Установить плагин",
+    open: "открыть демо",
+    exit: "выйти из демо",
+    settings: "настройки учебного хранилища",
+    reset: "сбросить учебные данные",
+    loading: "загрузка интерфейса Genealogy Graph…",
+    failure: "не удалось открыть демо.",
+    retry: "повторить",
+    install: "установить плагин",
     links: "Genealogy Graph: установка и исходный код",
   },
   en: {
     label: "Genealogy Graph: full plugin interface",
     frame: "Genealogy Graph — original plugin interface with a fictional family",
-    open: "Open demo",
-    exit: "Exit demo",
-    settings: "Demo vault settings",
-    reset: "Reset demo data",
-    loading: "Loading the Genealogy Graph interface…",
-    failure: "Could not open the demo.",
-    retry: "Try again",
-    install: "Install plugin",
+    open: "open demo",
+    exit: "exit demo",
+    settings: "demo vault settings",
+    reset: "reset demo data",
+    loading: "loading the Genealogy Graph interface…",
+    failure: "could not open the demo.",
+    retry: "try again",
+    install: "install plugin",
     links: "Genealogy Graph: installation and source code",
   },
 };
@@ -278,7 +278,7 @@ export function ObsidianGraphDemo({
               target="_blank"
               rel="noreferrer"
             >
-              GitHub
+              github
             </ButtonLink>
           )}
         </nav>
