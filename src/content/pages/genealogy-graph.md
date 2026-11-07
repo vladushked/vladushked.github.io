@@ -1,5 +1,5 @@
 ---
-route: /projects/genealogy
+route: /projects/genealogy-graph
 title: Genealogy Graph
 description: Плагин для Obsidian, который строит интерактивное семейное дерево из ваших заметок.
 projectTags: Obsidian, родословная
