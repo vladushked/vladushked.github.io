@@ -38,6 +38,7 @@ jobs:
       - name: Build
         env:
           VK_USER_ACCESS_TOKEN: ${{ secrets.VK_USER_ACCESS_TOKEN }}
+          VITE_CF_WEB_ANALYTICS_TOKEN: ${{ vars.CF_WEB_ANALYTICS_TOKEN }}
         run: npm run build
 
       - name: Setup Pages

@@ -217,6 +217,19 @@ bash docker/run-check.sh build
 node scripts/generate-post-video-thumbnails.mjs
 ```
 
+## Приватная статистика посещений
+
+Cloudflare Web Analytics подключается только в production-сборке на `vladislavplotnikov.ru`, когда задан `VITE_CF_WEB_ANALYTICS_TOKEN`. Без токена, в dev-режиме и на локальных/других доменах скрипт не загружается. Счётчика на странице нет; статистика доступна в кабинете Cloudflare.
+
+1. В Cloudflare → Web Analytics добавьте сайт `vladislavplotnikov.ru` и выберите ручную установку JS snippet.
+2. Из **Manage site → JS snippet** возьмите значение `token` из `data-cf-beacon`. Это публичный идентификатор сайта, а не Cloudflare API token.
+3. В GitHub-репозитории откройте **Settings → Secrets and variables → Actions → Variables** и добавьте repository variable `CF_WEB_ANALYTICS_TOKEN` с этим значением.
+4. Запустите workflow **Deploy Vite site to GitHub Pages** заново. Он передаёт переменную в Vite во время сборки. Для отключения удалите переменную и повторите публикацию.
+
+Используется один официальный beacon; переходы React Router учитываются автоматически, без дополнительных вызовов счётчика. Не включайте параллельно автоматическую вставку того же скрипта через Cloudflare proxy.
+
+Документация: [подключение](https://developers.cloudflare.com/web-analytics/get-started/) · [автоматический учёт SPA-переходов](https://developers.cloudflare.com/web-analytics/get-started/web-analytics-spa/).
+
 ## Дизайн и доступность
 
 `src/components/ui` содержит используемые сайтом компоненты, `src/styles/tokens.css` — шрифты и палитру. Inter и Roboto Mono поставляются локально из npm-пакетов. Фон остаётся закреплённым при прокрутке; переходы сохраняют старую страницу до завершения fade-out. Клавиатурная навигация, история браузера и `prefers-reduced-motion` переключают страницы сразу. При скрытии страницы живой фон и demo приостанавливаются.
